@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatArea from '../components/ChatArea';
@@ -10,7 +9,7 @@ const Index = () => {
     id: '728395',
     name: 'You',
     avatar: '👤',
-    status: 'online'
+    status: 'online' as const
   });
 
   const [contacts, setContacts] = useState<Contact[]>([
