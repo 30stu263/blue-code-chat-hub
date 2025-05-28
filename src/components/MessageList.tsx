@@ -1,11 +1,12 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Message, Contact } from '../types';
+import { DatabaseMessage } from '../hooks/useMessages';
+import { DatabaseContact } from '../hooks/useContacts';
 
 interface MessageListProps {
-  messages: Message[];
+  messages: DatabaseMessage[];
   currentUserId: string;
-  contact: Contact;
+  contact: DatabaseContact;
 }
 
 const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, contact }) => {
@@ -19,8 +20,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
     scrollToBottom();
   }, [messages]);
 
-  const formatTime = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   if (messages.length === 0) {
@@ -28,7 +29,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-            {contact.avatar}
+            {contact.profiles.avatar_emoji}
           </div>
           <p className="text-gray-400">No messages yet</p>
           <p className="text-sm text-gray-500">Send a message to start the conversation!</p>
@@ -40,14 +41,14 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {messages.map((message) => {
-        const isOwn = message.senderId === currentUserId;
+        const isOwn = message.sender_id === currentUserId;
         
         return (
           <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
             <div className={`flex max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
               {!isOwn && (
                 <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-sm mr-2">
-                  {contact.avatar}
+                  {contact.profiles.avatar_emoji}
                 </div>
               )}
               
@@ -60,7 +61,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
               `}>
                 <p className="text-sm">{message.content}</p>
                 <p className={`text-xs mt-1 ${isOwn ? 'text-blue-200' : 'text-gray-400'}`}>
-                  {formatTime(message.timestamp)}
+                  {formatTime(message.created_at)}
                 </p>
               </div>
             </div>

@@ -1,19 +1,19 @@
 
 import React from 'react';
-import { Contact } from '../types';
+import { DatabaseContact } from '../hooks/useContacts';
 
 interface ContactListProps {
-  contacts: Contact[];
-  selectedContact: Contact | null;
-  onSelectContact: (contact: Contact) => void;
+  contacts: DatabaseContact[];
+  selectedContactId: string | null;
+  onSelectContact: (contactId: string) => void;
 }
 
 const ContactList: React.FC<ContactListProps> = ({
   contacts,
-  selectedContact,
+  selectedContactId,
   onSelectContact
 }) => {
-  const getStatusColor = (status: Contact['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
@@ -34,10 +34,10 @@ const ContactList: React.FC<ContactListProps> = ({
         contacts.map((contact) => (
           <div
             key={contact.id}
-            onClick={() => onSelectContact(contact)}
+            onClick={() => onSelectContact(contact.contact_user_id)}
             className={`
               flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 mb-1
-              ${selectedContact?.id === contact.id
+              ${selectedContactId === contact.contact_user_id
                 ? 'bg-blue-600 text-white'
                 : 'hover:bg-gray-700 text-gray-300'
               }
@@ -45,25 +45,16 @@ const ContactList: React.FC<ContactListProps> = ({
           >
             <div className="relative">
               <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-lg">
-                {contact.avatar}
+                {contact.profiles.avatar_emoji}
               </div>
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-gray-800 ${getStatusColor(contact.status)}`}></div>
+              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-gray-800 ${getStatusColor(contact.profiles.status)}`}></div>
             </div>
             
             <div className="flex-1 ml-3 min-w-0">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium truncate">{contact.name}</h4>
-                <span className="text-xs text-gray-400">{contact.lastMessageTime}</span>
+                <h4 className="font-medium truncate">{contact.profiles.display_name}</h4>
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-400 truncate">{contact.lastMessage || 'No messages'}</p>
-                {contact.unreadCount > 0 && (
-                  <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                    {contact.unreadCount}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-500">ID: {contact.id}</p>
+              <p className="text-xs text-gray-500">@{contact.profiles.username}</p>
             </div>
           </div>
         ))

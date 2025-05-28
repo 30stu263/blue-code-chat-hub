@@ -1,14 +1,15 @@
 
 import React from 'react';
-import { Contact, Message } from '../types';
+import { DatabaseContact } from '../hooks/useContacts';
+import { DatabaseMessage } from '../hooks/useMessages';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 
 interface ChatAreaProps {
-  selectedContact: Contact | null;
-  messages: Message[];
+  selectedContact: DatabaseContact | undefined;
+  messages: DatabaseMessage[];
   currentUserId: string;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string) => Promise<boolean>;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -26,14 +27,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Welcome to Blueteck Message</h2>
           <p className="text-gray-400 max-w-md">
-            Select a contact from the sidebar to start messaging, or add new contacts using their unique ID numbers.
+            Select a contact from the sidebar to start messaging, or add new contacts using their username.
           </p>
         </div>
       </div>
     );
   }
 
-  const getStatusColor = (status: Contact['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
@@ -49,15 +50,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <div className="flex items-center">
           <div className="relative">
             <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-lg">
-              {selectedContact.avatar}
+              {selectedContact.profiles.avatar_emoji}
             </div>
-            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(selectedContact.status)}`}></div>
+            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(selectedContact.profiles.status)}`}></div>
           </div>
           <div className="ml-3">
-            <h3 className="font-semibold text-white">{selectedContact.name}</h3>
+            <h3 className="font-semibold text-white">{selectedContact.profiles.display_name}</h3>
             <p className="text-sm text-gray-400">
-              {selectedContact.status === 'online' ? 'Online' : 
-               selectedContact.status === 'away' ? 'Away' : 'Offline'} • ID: {selectedContact.id}
+              {selectedContact.profiles.status === 'online' ? 'Online' : 
+               selectedContact.profiles.status === 'away' ? 'Away' : 'Offline'} • @{selectedContact.profiles.username}
             </p>
           </div>
         </div>

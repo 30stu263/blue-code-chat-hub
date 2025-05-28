@@ -5,11 +5,11 @@ import { X, UserPlus } from 'lucide-react';
 
 interface AddContactModalProps {
   onClose: () => void;
-  onAddContact: (contactId: string) => boolean;
+  onAddContact: (username: string) => Promise<boolean>;
 }
 
 const AddContactModal: React.FC<AddContactModalProps> = ({ onClose, onAddContact }) => {
-  const [contactId, setContactId] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,33 +17,25 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ onClose, onAddContact
     e.preventDefault();
     setError('');
     
-    if (!contactId.trim()) {
-      setError('Please enter a contact ID');
-      return;
-    }
-
-    if (contactId.length !== 6) {
-      setError('Contact ID must be 6 digits');
-      return;
-    }
-
-    if (!/^\d+$/.test(contactId)) {
-      setError('Contact ID must contain only numbers');
+    if (!username.trim()) {
+      setError('Please enter a username');
       return;
     }
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const success = onAddContact(contactId);
+    try {
+      const success = await onAddContact(username.trim());
       if (success) {
         onClose();
       } else {
-        setError('Contact not found or already added');
+        setError('User not found or already added');
       }
+    } catch (err) {
+      setError('An error occurred while adding contact');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -64,35 +56,18 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ onClose, onAddContact
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Contact ID
+              Username
             </label>
             <input
               type="text"
-              value={contactId}
-              onChange={(e) => setContactId(e.target.value)}
-              placeholder="Enter 6-digit ID (e.g., 123456)"
-              maxLength={6}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username (e.g., john_doe)"
               className="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {error && (
               <p className="text-red-400 text-sm mt-2">{error}</p>
             )}
-          </div>
-
-          <div className="text-sm text-gray-400 mb-4">
-            <p>💡 Try these sample IDs:</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {['111222', '333444', '555666'].map(id => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setContactId(id)}
-                  className="bg-gray-700 hover:bg-gray-600 text-blue-400 px-2 py-1 rounded text-xs"
-                >
-                  {id}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className="flex space-x-3">

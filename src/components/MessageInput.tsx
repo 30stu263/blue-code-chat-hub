@@ -4,17 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Send, Paperclip, Smile } from 'lucide-react';
 
 interface MessageInputProps {
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string) => Promise<boolean>;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
   const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      onSendMessage(message.trim());
-      setMessage('');
+    if (message.trim() && !sending) {
+      setSending(true);
+      const success = await onSendMessage(message.trim());
+      if (success) {
+        setMessage('');
+      }
+      setSending(false);
     }
   };
 
@@ -37,6 +42,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
             rows={1}
             className="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-3 pr-20 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-32"
             style={{ minHeight: '48px' }}
+            disabled={sending}
           />
           
           <div className="absolute right-2 bottom-2 flex space-x-1">
@@ -61,7 +67,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
         
         <Button
           type="submit"
-          disabled={!message.trim()}
+          disabled={!message.trim() || sending}
           className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="h-4 w-4" />
