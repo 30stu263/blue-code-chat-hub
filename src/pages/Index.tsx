@@ -40,7 +40,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex">
+    <div className="min-h-screen bg-gray-900 text-white flex relative">
       <Sidebar
         contacts={contacts}
         selectedContactId={selectedContactId}
@@ -54,12 +54,16 @@ const Index = () => {
         onAddContact={handleAddContact}
         onSignOut={signOut}
       />
-      <ChatArea
-        selectedContact={selectedContact}
-        messages={messages}
-        currentUserId={user.id}
-        onSendMessage={sendMessage}
-      />
+      
+      {/* Main chat area with responsive padding */}
+      <div className="flex-1 flex flex-col pt-16 md:pt-0">
+        <ChatArea
+          selectedContact={selectedContact}
+          messages={messages}
+          currentUserId={user.id}
+          onSendMessage={sendMessage}
+        />
+      </div>
     </div>
   );
 };

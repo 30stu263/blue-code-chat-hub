@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseMessage } from '../hooks/useMessages';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import VideoCall from './VideoCall';
+import { Button } from '@/components/ui/button';
+import { Video, Phone } from 'lucide-react';
 
 interface ChatAreaProps {
   selectedContact: DatabaseContact | undefined;
@@ -18,14 +21,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   currentUserId,
   onSendMessage
 }) => {
+  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
+  const [isIncomingCall, setIsIncomingCall] = useState(false);
+
   if (!selectedContact) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-900">
-        <div className="text-center">
+        <div className="text-center px-4">
           <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-4xl mb-4 mx-auto">
             💬
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Welcome to Blueteck Message</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Welcome to Blueteck Message</h2>
           <p className="text-gray-400 max-w-md">
             Select a contact from the sidebar to start messaging, or add new contacts using their username.
           </p>
@@ -43,37 +49,87 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
   };
 
+  const handleVideoCall = () => {
+    setIsVideoCallActive(true);
+  };
+
+  const handleVoiceCall = () => {
+    // For now, this will also start a video call
+    setIsVideoCallActive(true);
+  };
+
+  const handleEndCall = () => {
+    setIsVideoCallActive(false);
+    setIsIncomingCall(false);
+  };
+
   return (
-    <div className="flex-1 flex flex-col bg-gray-900">
-      {/* Chat Header */}
-      <div className="p-4 border-b border-gray-700 bg-gray-800">
-        <div className="flex items-center">
-          <div className="relative">
-            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-lg">
-              {selectedContact.profiles.avatar_emoji}
+    <>
+      <div className="flex-1 flex flex-col bg-gray-900">
+        {/* Chat Header */}
+        <div className="p-3 md:p-4 border-b border-gray-700 bg-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center min-w-0 flex-1">
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-600 rounded-full flex items-center justify-center text-sm md:text-lg">
+                  {selectedContact.profiles.avatar_emoji}
+                </div>
+                <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-gray-800 ${getStatusColor(selectedContact.profiles.status)}`}></div>
+              </div>
+              <div className="ml-3 min-w-0 flex-1">
+                <h3 className="font-semibold text-white text-sm md:text-base truncate">
+                  {selectedContact.profiles.display_name}
+                </h3>
+                <p className="text-xs md:text-sm text-gray-400 truncate">
+                  {selectedContact.profiles.status === 'online' ? 'Online' : 
+                   selectedContact.profiles.status === 'away' ? 'Away' : 'Offline'} • @{selectedContact.profiles.username}
+                </p>
+              </div>
             </div>
-            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(selectedContact.profiles.status)}`}></div>
-          </div>
-          <div className="ml-3">
-            <h3 className="font-semibold text-white">{selectedContact.profiles.display_name}</h3>
-            <p className="text-sm text-gray-400">
-              {selectedContact.profiles.status === 'online' ? 'Online' : 
-               selectedContact.profiles.status === 'away' ? 'Away' : 'Offline'} • @{selectedContact.profiles.username}
-            </p>
+            
+            {/* Call Buttons */}
+            <div className="flex space-x-2 ml-2">
+              <Button
+                onClick={handleVoiceCall}
+                size="sm"
+                variant="ghost"
+                className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
+              >
+                <Phone className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleVideoCall}
+                size="sm"
+                variant="ghost"
+                className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
+              >
+                <Video className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Messages */}
+        <MessageList
+          messages={messages}
+          currentUserId={currentUserId}
+          contact={selectedContact}
+        />
+
+        {/* Message Input */}
+        <MessageInput onSendMessage={onSendMessage} />
       </div>
 
-      {/* Messages */}
-      <MessageList
-        messages={messages}
-        currentUserId={currentUserId}
-        contact={selectedContact}
+      {/* Video Call Component */}
+      <VideoCall
+        isActive={isVideoCallActive}
+        isIncoming={isIncomingCall}
+        contactName={selectedContact.profiles.display_name || 'Contact'}
+        onAccept={() => setIsIncomingCall(false)}
+        onDecline={handleEndCall}
+        onEnd={handleEndCall}
       />
-
-      {/* Message Input */}
-      <MessageInput onSendMessage={onSendMessage} />
-    </div>
+    </>
   );
 };
 
