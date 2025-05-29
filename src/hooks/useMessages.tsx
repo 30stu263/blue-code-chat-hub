@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -70,7 +69,7 @@ export const useMessages = (contactId: string | null) => {
     };
   }, [contactId, user]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, messageType: 'text' | 'image' = 'text') => {
     if (!contactId || !user) return false;
 
     const { error } = await supabase
@@ -79,7 +78,7 @@ export const useMessages = (contactId: string | null) => {
         sender_id: user.id,
         receiver_id: contactId,
         content,
-        message_type: 'text'
+        message_type: messageType
       });
 
     if (error) {

@@ -9,7 +9,7 @@ interface ChatAreaProps {
   selectedContact: DatabaseContact | undefined;
   messages: DatabaseMessage[];
   currentUserId: string;
-  onSendMessage: (content: string) => Promise<boolean>;
+  onSendMessage: (content: string, type?: 'text' | 'image') => Promise<boolean>;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({

@@ -6,7 +6,8 @@ import ContactList from './ContactList';
 import UserProfile from './UserProfile';
 import AddContactModal from './AddContactModal';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, LogOut } from 'lucide-react';
+import { Plus, Search, LogOut, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   contacts: DatabaseContact[];
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const navigate = useNavigate();
 
   const filteredContacts = contacts.filter(contact =>
     contact.profiles.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -46,6 +48,14 @@ const Sidebar: React.FC<SidebarProps> = ({
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => navigate('/settings')}
+              size="sm"
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              <Settings className="h-4 w-4" />
             </Button>
             <Button
               onClick={onSignOut}

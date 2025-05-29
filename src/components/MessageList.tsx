@@ -24,6 +24,22 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderMessageContent = (message: DatabaseMessage) => {
+    if (message.message_type === 'image') {
+      return (
+        <div className="max-w-xs">
+          <img
+            src={message.content}
+            alt="Shared image"
+            className="rounded-lg max-w-full h-auto cursor-pointer"
+            onClick={() => window.open(message.content, '_blank')}
+          />
+        </div>
+      );
+    }
+    return <p className="text-sm">{message.content}</p>;
+  };
+
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -36,7 +52,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -59,7 +75,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
                   : 'bg-gray-700 text-white rounded-bl-sm'
                 }
               `}>
-                <p className="text-sm">{message.content}</p>
+                {renderMessageContent(message)}
                 <p className={`text-xs mt-1 ${isOwn ? 'text-blue-200' : 'text-gray-400'}`}>
                   {formatTime(message.created_at)}
                 </p>
