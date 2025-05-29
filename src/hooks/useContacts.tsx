@@ -34,7 +34,7 @@ export const useContacts = () => {
         .from('contacts')
         .select(`
           *,
-          profiles!contacts_contact_user_id_fkey (
+          profiles!inner (
             id,
             username,
             display_name,
@@ -46,6 +46,42 @@ export const useContacts = () => {
 
       if (error) {
         console.error('Error fetching contacts:', error);
+        // If the join fails, try a different approach
+        const { data: contactsData, error: contactsError } = await supabase
+          .from('contacts')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (contactsError) {
+          console.error('Error fetching contacts fallback:', contactsError);
+          setContacts([]);
+        } else {
+          // Fetch profiles separately
+          const contactIds = contactsData?.map(c => c.contact_user_id) || [];
+          if (contactIds.length > 0) {
+            const { data: profilesData, error: profilesError } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('id', contactIds);
+
+            if (!profilesError && profilesData) {
+              const contactsWithProfiles = contactsData.map(contact => {
+                const profile = profilesData.find(p => p.id === contact.contact_user_id);
+                return {
+                  ...contact,
+                  profiles: profile || {
+                    id: contact.contact_user_id,
+                    username: 'Unknown',
+                    display_name: 'Unknown User',
+                    avatar_emoji: '👤',
+                    status: 'offline' as const
+                  }
+                };
+              });
+              setContacts(contactsWithProfiles);
+            }
+          }
+        }
       } else {
         setContacts(data || []);
       }
