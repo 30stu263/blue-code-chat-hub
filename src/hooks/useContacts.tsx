@@ -30,61 +30,60 @@ export const useContacts = () => {
 
     const fetchContacts = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch contacts and profiles separately to avoid join issues
+      const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
-        .select(`
-          *,
-          profiles!inner (
-            id,
-            username,
-            display_name,
-            avatar_emoji,
-            status
-          )
-        `)
+        .select('*')
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching contacts:', error);
-        // If the join fails, try a different approach
-        const { data: contactsData, error: contactsError } = await supabase
-          .from('contacts')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (contactsError) {
-          console.error('Error fetching contacts fallback:', contactsError);
-          setContacts([]);
-        } else {
-          // Fetch profiles separately
-          const contactIds = contactsData?.map(c => c.contact_user_id) || [];
-          if (contactIds.length > 0) {
-            const { data: profilesData, error: profilesError } = await supabase
-              .from('profiles')
-              .select('*')
-              .in('id', contactIds);
-
-            if (!profilesError && profilesData) {
-              const contactsWithProfiles = contactsData.map(contact => {
-                const profile = profilesData.find(p => p.id === contact.contact_user_id);
-                return {
-                  ...contact,
-                  profiles: profile || {
-                    id: contact.contact_user_id,
-                    username: 'Unknown',
-                    display_name: 'Unknown User',
-                    avatar_emoji: '👤',
-                    status: 'offline' as const
-                  }
-                };
-              });
-              setContacts(contactsWithProfiles);
-            }
-          }
-        }
-      } else {
-        setContacts(data || []);
+      if (contactsError) {
+        console.error('Error fetching contacts:', contactsError);
+        setContacts([]);
+        setLoading(false);
+        return;
       }
+
+      if (!contactsData || contactsData.length === 0) {
+        setContacts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch profiles for all contact user IDs
+      const contactIds = contactsData.map(c => c.contact_user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', contactIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setContacts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Combine contacts with their profiles
+      const contactsWithProfiles: DatabaseContact[] = contactsData.map(contact => {
+        const profile = profilesData?.find(p => p.id === contact.contact_user_id);
+        
+        return {
+          id: contact.id,
+          user_id: contact.user_id,
+          contact_user_id: contact.contact_user_id,
+          created_at: contact.created_at || new Date().toISOString(),
+          profiles: {
+            id: profile?.id || contact.contact_user_id,
+            username: profile?.username || 'Unknown',
+            display_name: profile?.display_name || 'Unknown User',
+            avatar_emoji: profile?.avatar_emoji || '👤',
+            status: (profile?.status as 'online' | 'away' | 'offline') || 'offline'
+          }
+        };
+      });
+
+      setContacts(contactsWithProfiles);
       setLoading(false);
     };
 
