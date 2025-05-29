@@ -42,19 +42,25 @@ export const useMessages = (contactId: string | null) => {
 
     fetchMessages();
 
-    // Set up real-time subscription
+    // Set up real-time subscription with proper filter
     const channel = supabase
-      .channel('messages')
+      .channel(`messages-${user.id}-${contactId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
-          filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${contactId}),and(sender_id.eq.${contactId},receiver_id.eq.${user.id}))`
+          table: 'messages'
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as DatabaseMessage]);
+          const newMessage = payload.new as DatabaseMessage;
+          // Only add messages that are part of this conversation
+          if (
+            (newMessage.sender_id === user.id && newMessage.receiver_id === contactId) ||
+            (newMessage.sender_id === contactId && newMessage.receiver_id === user.id)
+          ) {
+            setMessages(prev => [...prev, newMessage]);
+          }
         }
       )
       .subscribe();
