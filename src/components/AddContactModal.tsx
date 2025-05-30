@@ -25,13 +25,17 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ onClose, onAddContact
     setIsLoading(true);
     
     try {
+      console.log('Submitting contact addition for:', username.trim());
       const success = await onAddContact(username.trim());
       if (success) {
+        console.log('Contact added successfully');
         onClose();
       } else {
-        setError('User not found or already added');
+        console.log('Contact addition failed');
+        setError('User not found, already added, or cannot add yourself');
       }
     } catch (err) {
+      console.error('Error in handleSubmit:', err);
       setError('An error occurred while adding contact');
     } finally {
       setIsLoading(false);
@@ -62,7 +66,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ onClose, onAddContact
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username (e.g., john_doe)"
+              placeholder="Enter exact username"
               className="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {error && (

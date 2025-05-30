@@ -136,35 +136,70 @@ export const useContacts = () => {
   }, [user]);
 
   const addContact = async (username: string) => {
-    if (!user) return false;
+    if (!user) {
+      console.error('No authenticated user');
+      return false;
+    }
+
+    if (!username || username.trim() === '') {
+      console.error('Username is required');
+      return false;
+    }
+
+    const cleanUsername = username.trim().toLowerCase();
+    console.log('Attempting to add contact with username:', cleanUsername);
 
     try {
-      // First, find the user by username
+      // First, find the user by username (case insensitive)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('username', username)
+        .select('id, username')
+        .ilike('username', cleanUsername)
         .single();
 
-      if (profileError || !profileData) {
-        console.error('User not found:', profileError);
+      if (profileError) {
+        console.error('Profile lookup error:', profileError);
+        if (profileError.code === 'PGRST116') {
+          console.error('User not found with username:', cleanUsername);
+          return false;
+        }
+        return false;
+      }
+
+      if (!profileData) {
+        console.error('No profile found for username:', cleanUsername);
+        return false;
+      }
+
+      console.log('Found profile:', profileData);
+
+      // Check if user is trying to add themselves
+      if (profileData.id === user.id) {
+        console.error('Cannot add yourself as a contact');
         return false;
       }
 
       // Check if contact already exists
-      const { data: existingContact } = await supabase
+      const { data: existingContact, error: existingError } = await supabase
         .from('contacts')
         .select('id')
         .eq('user_id', user.id)
         .eq('contact_user_id', profileData.id)
-        .single();
+        .maybeSingle();
+
+      if (existingError) {
+        console.error('Error checking existing contact:', existingError);
+        return false;
+      }
 
       if (existingContact) {
         console.error('Contact already exists');
         return false;
       }
 
-      // Add the contact (bidirectional)
+      console.log('Adding contact relationship...');
+
+      // Add the contact (user -> contact)
       const { error: error1 } = await supabase
         .from('contacts')
         .insert({
@@ -177,7 +212,9 @@ export const useContacts = () => {
         return false;
       }
 
-      // Add the reverse contact so both users see each other
+      console.log('Added forward contact relationship');
+
+      // Add the reverse contact so both users see each other (contact -> user)
       const { error: error2 } = await supabase
         .from('contacts')
         .insert({
@@ -188,11 +225,15 @@ export const useContacts = () => {
       if (error2) {
         console.error('Error adding reverse contact:', error2);
         // Don't return false here, as the main contact was added successfully
+        // But we should still try to clean up if possible
+      } else {
+        console.log('Added reverse contact relationship');
       }
 
+      console.log('Contact addition completed successfully');
       return true;
     } catch (error) {
-      console.error('Error in addContact:', error);
+      console.error('Unexpected error in addContact:', error);
       return false;
     }
   };
