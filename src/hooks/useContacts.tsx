@@ -89,69 +89,112 @@ export const useContacts = () => {
 
     fetchContacts();
 
-    // Set up real-time subscription for contacts
-    const channel = supabase
-      .channel('contacts')
+    // Set up real-time subscription for contacts with better filtering
+    const contactsChannel = supabase
+      .channel(`contacts-${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'contacts',
-          filter: `user_id=eq.${user.id}`
+          table: 'contacts'
         },
-        () => {
+        (payload) => {
+          console.log('Contact change detected:', payload);
+          // Refetch contacts when any contact changes
           fetchContacts();
         }
       )
       .subscribe();
 
+    // Also listen for profile updates that might affect our contacts
+    const profilesChannel = supabase
+      .channel(`profiles-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('Profile update detected:', payload);
+          // Only refetch if the updated profile is one of our contacts
+          const updatedProfileId = payload.new?.id;
+          const isContactProfile = contacts.some(c => c.contact_user_id === updatedProfileId);
+          if (isContactProfile) {
+            fetchContacts();
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(contactsChannel);
+      supabase.removeChannel(profilesChannel);
     };
   }, [user]);
 
   const addContact = async (username: string) => {
     if (!user) return false;
 
-    // First, find the user by username
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', username)
-      .single();
+    try {
+      // First, find the user by username
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .single();
 
-    if (profileError || !profileData) {
-      console.error('User not found:', profileError);
+      if (profileError || !profileData) {
+        console.error('User not found:', profileError);
+        return false;
+      }
+
+      // Check if contact already exists
+      const { data: existingContact } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('contact_user_id', profileData.id)
+        .single();
+
+      if (existingContact) {
+        console.error('Contact already exists');
+        return false;
+      }
+
+      // Add the contact (bidirectional)
+      const { error: error1 } = await supabase
+        .from('contacts')
+        .insert({
+          user_id: user.id,
+          contact_user_id: profileData.id
+        });
+
+      if (error1) {
+        console.error('Error adding contact:', error1);
+        return false;
+      }
+
+      // Add the reverse contact so both users see each other
+      const { error: error2 } = await supabase
+        .from('contacts')
+        .insert({
+          user_id: profileData.id,
+          contact_user_id: user.id
+        });
+
+      if (error2) {
+        console.error('Error adding reverse contact:', error2);
+        // Don't return false here, as the main contact was added successfully
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in addContact:', error);
       return false;
     }
-
-    // Check if contact already exists
-    const { data: existingContact } = await supabase
-      .from('contacts')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('contact_user_id', profileData.id)
-      .single();
-
-    if (existingContact) {
-      console.error('Contact already exists');
-      return false;
-    }
-
-    // Add the contact
-    const { error } = await supabase
-      .from('contacts')
-      .insert({
-        user_id: user.id,
-        contact_user_id: profileData.id
-      });
-
-    if (error) {
-      console.error('Error adding contact:', error);
-      return false;
-    }
-    return true;
   };
 
   return { contacts, loading, addContact };
