@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Image, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ImageUploadProps {
   onImageSelect: (imageUrl: string) => void;
@@ -13,10 +14,23 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, onClose }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
 
     // Create preview
     const reader = new FileReader();
@@ -24,24 +38,32 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, onClose }) => 
       setPreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
+
+    // Upload the file
+    handleUpload(file);
   };
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleUpload = async (file: File) => {
+    if (!user) {
+      toast.error('You must be logged in to upload images');
+      return;
+    }
 
     setUploading(true);
     
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `chat-images/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      console.log('Uploading file to path:', filePath);
 
       const { error: uploadError } = await supabase.storage
         .from('chat-attachments')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
@@ -49,8 +71,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, onClose }) => 
         .from('chat-attachments')
         .getPublicUrl(filePath);
 
+      console.log('File uploaded successfully, URL:', data.publicUrl);
       onImageSelect(data.publicUrl);
       toast.success('Image uploaded successfully');
+      onClose();
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload image');
@@ -89,7 +113,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, onClose }) => 
             <input
               type="file"
               accept="image/*"
-              onChange={handleUpload}
+              onChange={handleFileSelect}
               disabled={uploading}
               className="hidden"
             />
@@ -97,6 +121,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, onClose }) => 
               <Image className="h-12 w-12 mx-auto text-gray-400 mb-2" />
               <p className="text-gray-400">
                 {uploading ? 'Uploading...' : 'Click to select an image'}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Max 5MB • JPG, PNG, GIF, WebP
               </p>
             </div>
           </label>

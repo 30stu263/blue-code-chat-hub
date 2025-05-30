@@ -2,14 +2,16 @@
 import React, { useEffect, useRef } from 'react';
 import { DatabaseMessage } from '../hooks/useMessages';
 import { DatabaseContact } from '../hooks/useContacts';
+import { DatabaseGroupChat } from '../hooks/useGroupChats';
 
 interface MessageListProps {
   messages: DatabaseMessage[];
   currentUserId: string;
-  contact: DatabaseContact;
+  contact?: DatabaseContact;
+  groupChat?: DatabaseGroupChat;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, contact }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, contact, groupChat }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -40,19 +42,28 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
     return <p className="text-sm">{message.content}</p>;
   };
 
+  const isGroupChat = !!groupChat;
+  const chatName = isGroupChat ? groupChat.name : contact?.profiles.display_name;
+  const chatAvatar = isGroupChat ? '👥' : contact?.profiles.avatar_emoji;
+
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-            {contact.profiles.avatar_emoji}
+            {chatAvatar}
           </div>
           <p className="text-gray-400">No messages yet</p>
-          <p className="text-sm text-gray-500">Send a message to start the conversation!</p>
+          <p className="text-sm text-gray-500">
+            {isGroupChat 
+              ? `Start the conversation in ${chatName}!`
+              : 'Send a message to start the conversation!'
+            }
+          </p>
         </div>
       </div>
     );
-  };
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -64,7 +75,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
             <div className={`flex max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
               {!isOwn && (
                 <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-sm mr-2">
-                  {contact.profiles.avatar_emoji}
+                  {isGroupChat ? '👤' : contact?.profiles.avatar_emoji}
                 </div>
               )}
               
@@ -75,6 +86,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
                   : 'bg-gray-700 text-white rounded-bl-sm'
                 }
               `}>
+                {/* Show sender name in group chats for non-own messages */}
+                {isGroupChat && !isOwn && (
+                  <p className="text-xs text-gray-300 mb-1 font-medium">
+                    User {message.sender_id.slice(0, 8)}
+                  </p>
+                )}
                 {renderMessageContent(message)}
                 <p className={`text-xs mt-1 ${isOwn ? 'text-blue-200' : 'text-gray-400'}`}>
                   {formatTime(message.created_at)}

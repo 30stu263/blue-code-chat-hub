@@ -30,10 +30,73 @@ export type Database = {
         }
         Relationships: []
       }
+      group_chat_members: {
+        Row: {
+          group_chat_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          group_chat_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          group_chat_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_chat_members_group_chat_id_fkey"
+            columns: ["group_chat_id"]
+            isOneToOne: false
+            referencedRelation: "group_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_chats: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_general: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_general?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_general?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
           created_at: string | null
+          group_chat_id: string | null
           id: string
           message_type: string | null
           read_at: string | null
@@ -43,6 +106,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          group_chat_id?: string | null
           id?: string
           message_type?: string | null
           read_at?: string | null
@@ -52,13 +116,22 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          group_chat_id?: string | null
           id?: string
           message_type?: string | null
           read_at?: string | null
           receiver_id?: string
           sender_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_group_chat_id_fkey"
+            columns: ["group_chat_id"]
+            isOneToOne: false
+            referencedRelation: "group_chats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

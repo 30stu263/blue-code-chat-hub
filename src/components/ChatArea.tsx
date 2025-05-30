@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
+import { DatabaseGroupChat } from '../hooks/useGroupChats';
 import { DatabaseMessage } from '../hooks/useMessages';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import VideoCall from './VideoCall';
 import { Button } from '@/components/ui/button';
-import { Video, Phone } from 'lucide-react';
+import { Video, Phone, Users } from 'lucide-react';
 
 interface ChatAreaProps {
-  selectedContact: DatabaseContact | undefined;
+  selectedContact?: DatabaseContact;
+  selectedGroupChat?: DatabaseGroupChat;
   messages: DatabaseMessage[];
   currentUserId: string;
   onSendMessage: (content: string, type?: 'text' | 'image') => Promise<boolean>;
@@ -17,6 +19,7 @@ interface ChatAreaProps {
 
 const ChatArea: React.FC<ChatAreaProps> = ({
   selectedContact,
+  selectedGroupChat,
   messages,
   currentUserId,
   onSendMessage
@@ -24,7 +27,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const [isVideoCallActive, setIsVideoCallActive] = useState(false);
   const [isIncomingCall, setIsIncomingCall] = useState(false);
 
-  if (!selectedContact) {
+  const currentChat = selectedContact || selectedGroupChat;
+
+  if (!currentChat) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-900">
         <div className="text-center px-4">
@@ -33,7 +38,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
           <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Welcome to Blueteck Message</h2>
           <p className="text-gray-400 max-w-md">
-            Select a contact from the sidebar to start messaging, or add new contacts using their username.
+            Select a contact or group chat from the sidebar to start messaging, or add new contacts using their username.
           </p>
         </div>
       </div>
@@ -54,7 +59,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   };
 
   const handleVoiceCall = () => {
-    // For now, this will also start a video call
     setIsVideoCallActive(true);
   };
 
@@ -62,6 +66,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     setIsVideoCallActive(false);
     setIsIncomingCall(false);
   };
+
+  const isGroupChat = !!selectedGroupChat;
+  const chatName = isGroupChat 
+    ? selectedGroupChat!.name 
+    : selectedContact!.profiles.display_name;
+  const chatSubtitle = isGroupChat
+    ? selectedGroupChat!.description || 'Group Chat'
+    : `${selectedContact!.profiles.status === 'online' ? 'Online' : 
+       selectedContact!.profiles.status === 'away' ? 'Away' : 'Offline'} • @${selectedContact!.profiles.username}`;
+  const chatAvatar = isGroupChat ? '👥' : selectedContact!.profiles.avatar_emoji;
 
   return (
     <>
@@ -72,40 +86,44 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <div className="flex items-center min-w-0 flex-1">
               <div className="relative flex-shrink-0">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-600 rounded-full flex items-center justify-center text-sm md:text-lg">
-                  {selectedContact.profiles.avatar_emoji}
+                  {chatAvatar}
                 </div>
-                <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-gray-800 ${getStatusColor(selectedContact.profiles.status)}`}></div>
+                {!isGroupChat && (
+                  <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-gray-800 ${getStatusColor(selectedContact!.profiles.status)}`}></div>
+                )}
               </div>
               <div className="ml-3 min-w-0 flex-1">
-                <h3 className="font-semibold text-white text-sm md:text-base truncate">
-                  {selectedContact.profiles.display_name}
+                <h3 className="font-semibold text-white text-sm md:text-base truncate flex items-center">
+                  {chatName}
+                  {isGroupChat && <Users className="h-3 w-3 ml-2 text-gray-400" />}
                 </h3>
                 <p className="text-xs md:text-sm text-gray-400 truncate">
-                  {selectedContact.profiles.status === 'online' ? 'Online' : 
-                   selectedContact.profiles.status === 'away' ? 'Away' : 'Offline'} • @{selectedContact.profiles.username}
+                  {chatSubtitle}
                 </p>
               </div>
             </div>
             
-            {/* Call Buttons */}
-            <div className="flex space-x-2 ml-2">
-              <Button
-                onClick={handleVoiceCall}
-                size="sm"
-                variant="ghost"
-                className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
-              >
-                <Phone className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleVideoCall}
-                size="sm"
-                variant="ghost"
-                className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
-              >
-                <Video className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Call Buttons - only show for direct messages */}
+            {!isGroupChat && (
+              <div className="flex space-x-2 ml-2">
+                <Button
+                  onClick={handleVoiceCall}
+                  size="sm"
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
+                >
+                  <Phone className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={handleVideoCall}
+                  size="sm"
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
+                >
+                  <Video className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -114,21 +132,24 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           messages={messages}
           currentUserId={currentUserId}
           contact={selectedContact}
+          groupChat={selectedGroupChat}
         />
 
         {/* Message Input */}
         <MessageInput onSendMessage={onSendMessage} />
       </div>
 
-      {/* Video Call Component */}
-      <VideoCall
-        isActive={isVideoCallActive}
-        isIncoming={isIncomingCall}
-        contactName={selectedContact.profiles.display_name || 'Contact'}
-        onAccept={() => setIsIncomingCall(false)}
-        onDecline={handleEndCall}
-        onEnd={handleEndCall}
-      />
+      {/* Video Call Component - only for direct messages */}
+      {!isGroupChat && (
+        <VideoCall
+          isActive={isVideoCallActive}
+          isIncoming={isIncomingCall}
+          contactName={selectedContact?.profiles.display_name || 'Contact'}
+          onAccept={() => setIsIncomingCall(false)}
+          onDecline={handleEndCall}
+          onEnd={handleEndCall}
+        />
+      )}
     </>
   );
 };
