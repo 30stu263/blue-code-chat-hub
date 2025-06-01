@@ -92,6 +92,38 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -100,7 +132,7 @@ export type Database = {
           id: string
           message_type: string | null
           read_at: string | null
-          receiver_id: string
+          receiver_id: string | null
           sender_id: string
         }
         Insert: {
@@ -110,7 +142,7 @@ export type Database = {
           id?: string
           message_type?: string | null
           read_at?: string | null
-          receiver_id: string
+          receiver_id?: string | null
           sender_id: string
         }
         Update: {
@@ -120,7 +152,7 @@ export type Database = {
           id?: string
           message_type?: string | null
           read_at?: string | null
-          receiver_id?: string
+          receiver_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -132,6 +164,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

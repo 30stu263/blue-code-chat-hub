@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { DatabaseMessage } from '../hooks/useMessages';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
+import MessageReactions from './MessageReactions';
 
 interface MessageListProps {
   messages: DatabaseMessage[];
@@ -74,13 +75,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
           <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
             <div className={`flex max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
               {!isOwn && (
-                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-sm mr-2">
+                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">
                   {isGroupChat ? '👤' : contact?.profiles.avatar_emoji}
                 </div>
               )}
               
               <div className={`
-                px-4 py-2 rounded-lg
+                px-4 py-2 rounded-lg relative group
                 ${isOwn 
                   ? 'bg-blue-600 text-white rounded-br-sm' 
                   : 'bg-gray-700 text-white rounded-bl-sm'
@@ -96,6 +97,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
                 <p className={`text-xs mt-1 ${isOwn ? 'text-blue-200' : 'text-gray-400'}`}>
                   {formatTime(message.created_at)}
                 </p>
+                
+                {/* Message reactions */}
+                <MessageReactions messageId={message.id} />
               </div>
             </div>
           </div>
