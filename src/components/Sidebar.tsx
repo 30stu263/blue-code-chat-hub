@@ -1,33 +1,44 @@
 
 import React, { useState } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
+import { DatabaseGroupChat } from '../hooks/useGroupChats';
 import { User } from '../types';
 import ContactList from './ContactList';
 import UserProfile from './UserProfile';
 import AddContactModal from './AddContactModal';
+import CreateGroupModal from './CreateGroupModal';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, LogOut, Settings, Menu, X } from 'lucide-react';
+import { Plus, Search, LogOut, Settings, Menu, X, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   contacts: DatabaseContact[];
+  groupChats: DatabaseGroupChat[];
   selectedContactId: string | null;
+  selectedGroupChatId: string | null;
   onSelectContact: (contactId: string) => void;
+  onSelectGroupChat: (groupChatId: string) => void;
   currentUser: User;
   onAddContact: (username: string) => Promise<boolean>;
+  onCreateGroup: (name: string, description?: string) => Promise<boolean>;
   onSignOut: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   contacts,
+  groupChats,
   selectedContactId,
+  selectedGroupChatId,
   onSelectContact,
+  onSelectGroupChat,
   currentUser,
   onAddContact,
+  onCreateGroup,
   onSignOut
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -36,9 +47,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     contact.profiles.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredGroupChats = groupChats.filter(group =>
+    group.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleContactSelect = (contactId: string) => {
     onSelectContact(contactId);
-    setIsMobileMenuOpen(false); // Close mobile menu when contact is selected
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleGroupSelect = (groupChatId: string) => {
+    onSelectGroupChat(groupChatId);
+    setIsMobileMenuOpen(false);
   };
 
   const sidebarContent = (
@@ -66,7 +86,16 @@ const Sidebar: React.FC<SidebarProps> = ({
             className="bg-blue-600 hover:bg-blue-700 text-white flex-1 md:flex-none"
           >
             <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Add</span>
+            <span className="hidden sm:inline">Add Contact</span>
+          </Button>
+          <Button
+            onClick={() => setShowCreateGroupModal(true)}
+            size="sm"
+            variant="outline"
+            className="border-gray-600 text-gray-300 hover:bg-gray-700 flex-1 md:flex-none"
+          >
+            <Users className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">New Group</span>
           </Button>
           <Button
             onClick={() => navigate('/settings')}
@@ -93,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             type="text"
-            placeholder="Search contacts..."
+            placeholder="Search contacts and groups..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -104,8 +133,44 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* User Profile */}
       <UserProfile user={currentUser} />
 
+      {/* Group Chats Section */}
+      <div className="border-b border-gray-700">
+        <div className="px-4 py-2">
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Group Chats</h3>
+        </div>
+        <div className="max-h-40 overflow-y-auto">
+          {filteredGroupChats.map((group) => (
+            <div
+              key={group.id}
+              onClick={() => handleGroupSelect(group.id)}
+              className={`flex items-center px-4 py-3 hover:bg-gray-700 cursor-pointer transition-colors ${
+                selectedGroupChatId === group.id ? 'bg-gray-700 border-r-2 border-blue-500' : ''
+              }`}
+            >
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                👥
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-white truncate">{group.name}</p>
+                  {group.is_general && (
+                    <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">General</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 truncate">
+                  {group.description || 'Group chat'}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Contact List */}
       <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-2">
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Direct Messages</h3>
+        </div>
         <ContactList
           contacts={filteredContacts}
           selectedContactId={selectedContactId}
@@ -113,11 +178,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       </div>
 
-      {/* Add Contact Modal */}
+      {/* Modals */}
       {showAddModal && (
         <AddContactModal
           onClose={() => setShowAddModal(false)}
           onAddContact={onAddContact}
+        />
+      )}
+
+      {showCreateGroupModal && (
+        <CreateGroupModal
+          onClose={() => setShowCreateGroupModal(false)}
+          onCreateGroup={onCreateGroup}
         />
       )}
     </>

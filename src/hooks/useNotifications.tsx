@@ -38,7 +38,12 @@ export const useNotifications = () => {
       if (error) {
         console.error('Error fetching notifications:', error);
       } else {
-        setNotifications(data || []);
+        // Type assertion to ensure proper typing
+        const typedNotifications = (data || []).map(notification => ({
+          ...notification,
+          type: notification.type as 'message' | 'reaction' | 'group_invite' | 'system'
+        }));
+        setNotifications(typedNotifications);
       }
       setLoading(false);
     };
@@ -57,7 +62,10 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          const newNotification = payload.new as DatabaseNotification;
+          const newNotification = {
+            ...payload.new,
+            type: payload.new.type as 'message' | 'reaction' | 'group_invite' | 'system'
+          } as DatabaseNotification;
           setNotifications(prev => [newNotification, ...prev]);
         }
       )
@@ -70,7 +78,10 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          const updatedNotification = payload.new as DatabaseNotification;
+          const updatedNotification = {
+            ...payload.new,
+            type: payload.new.type as 'message' | 'reaction' | 'group_invite' | 'system'
+          } as DatabaseNotification;
           setNotifications(prev => 
             prev.map(notif => notif.id === updatedNotification.id ? updatedNotification : notif)
           );

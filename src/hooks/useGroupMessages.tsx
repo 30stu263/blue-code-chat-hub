@@ -92,7 +92,7 @@ export const useGroupMessages = (groupChatId: string | null) => {
       .from('messages')
       .insert({
         sender_id: user.id,
-        receiver_id: user.id, // Required field, using sender_id as placeholder for group messages
+        receiver_id: null,
         group_chat_id: groupChatId,
         content,
         message_type: messageType
