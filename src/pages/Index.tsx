@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -113,8 +114,8 @@ const Index = () => {
       {/* Main chat area with responsive padding */}
       <div className="flex-1 flex flex-col pt-16 md:pt-0 relative z-10">
         <ChatArea
-          selectedContact={selectedContact}
-          selectedGroupChat={selectedGroupChat}
+          contact={selectedContact}
+          groupChat={selectedGroupChat}
           messages={currentMessages}
           currentUserId={user.id}
           onSendMessage={handleSendMessage}

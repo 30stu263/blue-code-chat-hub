@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
+import { DatabaseMessage } from '../hooks/useMessages';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import VideoCall from './VideoCall';
@@ -11,11 +13,12 @@ import { Video, Phone, MoreVertical, Users, Crown } from 'lucide-react';
 interface ChatAreaProps {
   contact?: DatabaseContact;
   groupChat?: DatabaseGroupChat;
+  messages: DatabaseMessage[];
   currentUserId: string;
-  onSendMessage: (content: string, messageType?: 'text' | 'image') => void;
+  onSendMessage: (content: string, messageType?: 'text' | 'image') => Promise<boolean>;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, currentUserId, onSendMessage }) => {
+const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, currentUserId, onSendMessage }) => {
   const [isTyping, setIsTyping] = useState(false);
   const videoCall = useVideoCall();
 
@@ -131,8 +134,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, currentUserId, 
         <MessageList
           messages={messages}
           currentUserId={currentUserId}
-          contact={selectedContact}
-          groupChat={selectedGroupChat}
+          contact={contact}
+          groupChat={groupChat}
         />
 
         {/* Message Input */}
