@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
@@ -24,6 +23,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, curre
 
   const chatPartner = contact || groupChat;
   const isGroupChat = !!groupChat;
+  const isUpdatesChat = groupChat && groupChat.name === 'Updates Chat';
 
   const handleStartVideoCall = () => {
     const name = isGroupChat ? groupChat.name : contact?.profiles.display_name || 'Unknown';
@@ -60,6 +60,25 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, curre
           </p>
         </div>
       </div>
+    );
+  }
+
+  // If this is the updates chat, use the special component
+  if (isUpdatesChat) {
+    const UpdatesChatArea = React.lazy(() => import('./UpdatesChatArea'));
+    return (
+      <React.Suspense fallback={
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }>
+        <UpdatesChatArea
+          groupChat={groupChat}
+          messages={messages}
+          currentUserId={currentUserId}
+          onSendMessage={onSendMessage}
+        />
+      </React.Suspense>
     );
   }
 

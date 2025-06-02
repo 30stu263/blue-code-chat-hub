@@ -228,6 +228,30 @@ export type Database = {
         }
         Relationships: []
       }
+      updates_chat_control: {
+        Row: {
+          controlled_at: string | null
+          current_user_id: string | null
+          id: string
+          is_active: boolean | null
+          password_hash: string
+        }
+        Insert: {
+          controlled_at?: string | null
+          current_user_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          password_hash?: string
+        }
+        Update: {
+          controlled_at?: string | null
+          current_user_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          password_hash?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
