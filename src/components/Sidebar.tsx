@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
@@ -71,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Blueteck
+              BlueTeck
             </h1>
           </div>
           

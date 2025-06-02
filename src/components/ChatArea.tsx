@@ -1,167 +1,127 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
-import { DatabaseMessage } from '../hooks/useMessages';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import VideoCall from './VideoCall';
-import NotificationsDropdown from './NotificationsDropdown';
+import { useVideoCall } from '../hooks/useVideoCall';
 import { Button } from '@/components/ui/button';
-import { Video, Phone, Users, Settings, Sparkles, MessageCircle } from 'lucide-react';
+import { Video, Phone, MoreVertical, Users, Crown } from 'lucide-react';
 
 interface ChatAreaProps {
-  selectedContact?: DatabaseContact;
-  selectedGroupChat?: DatabaseGroupChat;
-  messages: DatabaseMessage[];
+  contact?: DatabaseContact;
+  groupChat?: DatabaseGroupChat;
   currentUserId: string;
-  onSendMessage: (content: string, type?: 'text' | 'image') => Promise<boolean>;
+  onSendMessage: (content: string, messageType?: 'text' | 'image') => void;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({
-  selectedContact,
-  selectedGroupChat,
-  messages,
-  currentUserId,
-  onSendMessage
-}) => {
-  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
-  const [isIncomingCall, setIsIncomingCall] = useState(false);
+const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, currentUserId, onSendMessage }) => {
+  const [isTyping, setIsTyping] = useState(false);
+  const videoCall = useVideoCall();
 
-  const currentChat = selectedContact || selectedGroupChat;
+  const chatPartner = contact || groupChat;
+  const isGroupChat = !!groupChat;
 
-  if (!currentChat) {
+  const handleStartVideoCall = () => {
+    const name = isGroupChat ? groupChat.name : contact?.profiles.display_name || 'Unknown';
+    videoCall.startCall(name);
+  };
+
+  const handleStartAudioCall = () => {
+    // For now, start video call but could be implemented separately
+    handleStartVideoCall();
+  };
+
+  // Simulate incoming call (for demo purposes)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (Math.random() > 0.9 && !videoCall.isCallActive) {
+        const name = isGroupChat ? groupChat?.name : contact?.profiles.display_name || 'Unknown';
+        videoCall.receiveCall(name);
+      }
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [contact, groupChat, videoCall]);
+
+  if (!chatPartner) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-900/50 to-blue-900/30 backdrop-blur-sm relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        </div>
-        
-        <div className="text-center px-6 max-w-md relative z-10">
-          <div className="relative mb-8">
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-3xl flex items-center justify-center text-5xl mx-auto shadow-2xl mb-6 animate-scale-in">
-              <MessageCircle className="h-16 w-16 text-white" />
-            </div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center animate-bounce">
-              <Sparkles className="h-4 w-4 text-yellow-800" />
-            </div>
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-900/50 via-blue-900/30 to-purple-900/50 backdrop-blur-xl">
+        <div className="text-center max-w-md px-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-6 backdrop-blur-sm border border-white/10">
+            💬
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent animate-fade-in">
-            Welcome to Blueteck
-          </h2>
-          <p className="text-white/70 text-lg leading-relaxed animate-fade-in delay-200">
-            Connect with friends and colleagues in beautiful conversations. Select a contact or group from the sidebar to start messaging.
+          <h2 className="text-2xl font-bold text-white mb-4">Welcome to BlueTeck</h2>
+          <p className="text-white/60 leading-relaxed">
+            Select a conversation from the sidebar to start chatting, or create a new group to bring people together.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center animate-fade-in delay-300">
-            <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-              <span className="text-white/60 text-sm">💬 Direct Messages</span>
-            </div>
-            <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-              <span className="text-white/60 text-sm">👥 Group Chats</span>
-            </div>
-          </div>
         </div>
       </div>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-emerald-400 shadow-emerald-400/50';
-      case 'away': return 'bg-yellow-400 shadow-yellow-400/50';
-      case 'offline': return 'bg-gray-400 shadow-gray-400/50';
-      default: return 'bg-gray-400 shadow-gray-400/50';
-    }
-  };
-
-  const handleVideoCall = () => {
-    setIsVideoCallActive(true);
-  };
-
-  const handleVoiceCall = () => {
-    setIsVideoCallActive(true);
-  };
-
-  const handleEndCall = () => {
-    setIsVideoCallActive(false);
-    setIsIncomingCall(false);
-  };
-
-  const isGroupChat = !!selectedGroupChat;
-  const chatName = isGroupChat 
-    ? selectedGroupChat!.name 
-    : selectedContact!.profiles.display_name;
-  const chatSubtitle = isGroupChat
-    ? selectedGroupChat!.description || 'Group Chat'
-    : `${selectedContact!.profiles.status === 'online' ? 'Online' : 
-       selectedContact!.profiles.status === 'away' ? 'Away' : 'Offline'} • @${selectedContact!.profiles.username}`;
-  const chatAvatar = isGroupChat ? <Users className="h-7 w-7" /> : selectedContact!.profiles.avatar_emoji;
+  const chatName = isGroupChat ? groupChat.name : contact?.profiles.display_name;
+  const chatAvatar = isGroupChat ? <Users className="h-8 w-8" /> : contact?.profiles.avatar_emoji;
 
   return (
     <>
-      <div className="flex-1 flex flex-col bg-slate-900/30 backdrop-blur-sm">
+      <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-900/50 via-blue-900/30 to-purple-900/50 backdrop-blur-xl">
         {/* Enhanced Chat Header */}
-        <div className="p-4 bg-gradient-to-r from-slate-800/80 to-blue-800/40 backdrop-blur-xl border-b border-white/10 shadow-lg">
+        <div className="p-4 bg-slate-800/80 backdrop-blur-xl border-b border-white/10 shadow-lg">
           <div className="flex items-center justify-between">
-            <div className="flex items-center min-w-0 flex-1">
-              <div className="relative flex-shrink-0">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center text-xl shadow-lg">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-xl shadow-lg">
                   {chatAvatar}
                 </div>
-                {!isGroupChat && (
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-slate-800 ${getStatusColor(selectedContact!.profiles.status)} shadow-lg`}></div>
-                )}
-                {isGroupChat && selectedGroupChat!.is_general && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-lg">
-                    <Sparkles className="h-3 w-3 text-yellow-800" />
+                {isGroupChat && groupChat.is_general && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <Crown className="h-2 w-2 text-yellow-800" />
                   </div>
                 )}
               </div>
-              <div className="ml-4 min-w-0 flex-1">
-                <h3 className="font-bold text-white text-lg truncate flex items-center">
-                  {chatName}
-                  {isGroupChat && <Users className="h-4 w-4 ml-2 text-white/60" />}
-                </h3>
-                <p className="text-sm text-white/60 truncate">
-                  {chatSubtitle}
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-semibold text-white text-lg truncate">{chatName}</h3>
+                  {isGroupChat && groupChat.is_general && (
+                    <span className="text-xs bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900 px-2 py-1 rounded-full font-medium">
+                      General
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-white/60">
+                  {isGroupChat ? 'Group conversation' : 'Direct message'}
                 </p>
+                {isTyping && (
+                  <p className="text-xs text-blue-400 animate-pulse">Someone is typing...</p>
+                )}
               </div>
             </div>
-            
-            {/* Enhanced Header Actions */}
-            <div className="flex items-center space-x-2 ml-4">
-              <NotificationsDropdown />
-              
-              {/* Call Buttons - only show for direct messages */}
-              {!isGroupChat && (
-                <>
-                  <Button
-                    onClick={handleVoiceCall}
-                    size="sm"
-                    variant="ghost"
-                    className="text-white/70 hover:text-white hover:bg-white/10 p-3 rounded-xl transition-all duration-200 backdrop-blur-sm"
-                  >
-                    <Phone className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    onClick={handleVideoCall}
-                    size="sm"
-                    variant="ghost"
-                    className="text-white/70 hover:text-white hover:bg-white/10 p-3 rounded-xl transition-all duration-200 backdrop-blur-sm"
-                  >
-                    <Video className="h-5 w-5" />
-                  </Button>
-                </>
-              )}
-              
+
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={handleStartAudioCall}
+                size="sm"
+                variant="ghost"
+                className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg"
+              >
+                <Phone className="h-5 w-5" />
+              </Button>
+              <Button
+                onClick={handleStartVideoCall}
+                size="sm"
+                variant="ghost"
+                className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg"
+              >
+                <Video className="h-5 w-5" />
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-white/70 hover:text-white hover:bg-white/10 p-3 rounded-xl transition-all duration-200 backdrop-blur-sm"
+                className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg"
               >
-                <Settings className="h-5 w-5" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -179,17 +139,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <MessageInput onSendMessage={onSendMessage} />
       </div>
 
-      {/* Video Call Component - only for direct messages */}
-      {!isGroupChat && (
-        <VideoCall
-          isActive={isVideoCallActive}
-          isIncoming={isIncomingCall}
-          contactName={selectedContact?.profiles.display_name || 'Contact'}
-          onAccept={() => setIsIncomingCall(false)}
-          onDecline={handleEndCall}
-          onEnd={handleEndCall}
-        />
-      )}
+      {/* Video Call Component */}
+      <VideoCall
+        isActive={videoCall.isCallActive}
+        isIncoming={videoCall.isIncomingCall}
+        contactName={videoCall.contactName}
+        localStream={videoCall.localStream}
+        remoteStream={videoCall.remoteStream}
+        isVideoEnabled={videoCall.isVideoEnabled}
+        isAudioEnabled={videoCall.isAudioEnabled}
+        onAccept={videoCall.acceptCall}
+        onDecline={videoCall.declineCall}
+        onEnd={videoCall.endCall}
+        onToggleVideo={videoCall.toggleVideo}
+        onToggleAudio={videoCall.toggleAudio}
+      />
     </>
   );
 };

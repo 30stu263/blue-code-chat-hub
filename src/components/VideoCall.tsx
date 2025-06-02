@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Video, VideoOff, Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 
@@ -7,78 +7,45 @@ interface VideoCallProps {
   isActive: boolean;
   isIncoming?: boolean;
   contactName?: string;
+  localStream?: MediaStream | null;
+  remoteStream?: MediaStream | null;
+  isVideoEnabled?: boolean;
+  isAudioEnabled?: boolean;
   onAccept?: () => void;
   onDecline?: () => void;
   onEnd?: () => void;
+  onToggleVideo?: () => void;
+  onToggleAudio?: () => void;
 }
 
 const VideoCall: React.FC<VideoCallProps> = ({
   isActive,
   isIncoming = false,
   contactName = 'Contact',
+  localStream,
+  remoteStream,
+  isVideoEnabled = true,
+  isAudioEnabled = true,
   onAccept,
   onDecline,
-  onEnd
+  onEnd,
+  onToggleVideo,
+  onToggleAudio
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
-    if (isActive && !isIncoming) {
-      startLocalVideo();
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
     }
-    
-    return () => {
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [isActive, isIncoming]);
+  }, [localStream]);
 
-  const startLocalVideo = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-      
-      setLocalStream(stream);
-      
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera/microphone:', error);
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
     }
-  };
-
-  const handleAccept = async () => {
-    await startLocalVideo();
-    onAccept?.();
-  };
-
-  const toggleVideo = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoEnabled(videoTrack.enabled);
-      }
-    }
-  };
-
-  const toggleAudio = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsAudioEnabled(audioTrack.enabled);
-      }
-    }
-  };
+  }, [remoteStream]);
 
   if (!isActive) return null;
 
@@ -100,7 +67,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
               <PhoneOff className="h-5 w-5" />
             </Button>
             <Button
-              onClick={handleAccept}
+              onClick={onAccept}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full"
             >
               <Video className="h-5 w-5" />
@@ -121,15 +88,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
           autoPlay
           playsInline
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-white text-center">
-            <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center text-4xl mb-4 mx-auto">
-              👤
+        {!remoteStream && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-white text-center">
+              <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center text-4xl mb-4 mx-auto">
+                👤
+              </div>
+              <p className="text-lg">{contactName}</p>
+              <p className="text-sm text-gray-300">Connecting...</p>
             </div>
-            <p className="text-lg">{contactName}</p>
-            <p className="text-sm text-gray-300">Connecting...</p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Local Video - Picture in Picture */}
@@ -152,14 +121,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
         <div className="flex space-x-4 bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-full px-6 py-4">
           <Button
-            onClick={toggleAudio}
+            onClick={onToggleAudio}
             className={`w-12 h-12 rounded-full ${isAudioEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'}`}
           >
             {isAudioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
           </Button>
           
           <Button
-            onClick={toggleVideo}
+            onClick={onToggleVideo}
             className={`w-12 h-12 rounded-full ${isVideoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'}`}
           >
             {isVideoEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
