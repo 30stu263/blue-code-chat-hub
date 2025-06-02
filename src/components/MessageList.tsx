@@ -1,10 +1,11 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DatabaseMessage } from '../hooks/useMessages';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
 import MessageReactions from './MessageReactions';
 import { Users, MessageCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MessageListProps {
   messages: DatabaseMessage[];
@@ -15,6 +16,7 @@ interface MessageListProps {
 
 const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, contact, groupChat }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [userProfiles, setUserProfiles] = useState<Record<string, { display_name: string; avatar_emoji: string }>>({});
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -23,6 +25,34 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Fetch user profiles for group chat messages
+  useEffect(() => {
+    if (groupChat && messages.length > 0) {
+      const userIds = [...new Set(messages.map(msg => msg.sender_id))];
+      
+      const fetchProfiles = async () => {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_emoji')
+          .in('id', userIds);
+
+        if (profiles) {
+          const profileMap = profiles.reduce((acc, profile) => {
+            acc[profile.id] = {
+              display_name: profile.display_name || 'Unknown User',
+              avatar_emoji: profile.avatar_emoji || '👤'
+            };
+            return acc;
+          }, {} as Record<string, { display_name: string; avatar_emoji: string }>);
+          
+          setUserProfiles(profileMap);
+        }
+      };
+
+      fetchProfiles();
+    }
+  }, [groupChat, messages]);
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -77,6 +107,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
       {messages.map((message, index) => {
         const isOwn = message.sender_id === currentUserId;
         const showAvatar = !isOwn && (index === 0 || messages[index - 1].sender_id !== message.sender_id);
+        const senderProfile = userProfiles[message.sender_id];
         
         return (
           <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}>
@@ -85,7 +116,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
                 <div className={`w-10 h-10 flex items-center justify-center mr-3 flex-shrink-0 ${showAvatar ? '' : 'invisible'}`}>
                   {showAvatar && (
                     <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center text-sm shadow-lg">
-                      {isGroupChat ? '👤' : contact?.profiles.avatar_emoji}
+                      {isGroupChat ? (senderProfile?.avatar_emoji || '👤') : contact?.profiles.avatar_emoji}
                     </div>
                   )}
                 </div>
@@ -101,7 +132,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, cont
                 {/* Show sender name in group chats for non-own messages */}
                 {isGroupChat && !isOwn && showAvatar && (
                   <p className="text-xs text-white/70 mb-2 font-medium">
-                    User {message.sender_id.slice(0, 8)}
+                    {senderProfile?.display_name || 'Unknown User'}
                   </p>
                 )}
                 {renderMessageContent(message)}

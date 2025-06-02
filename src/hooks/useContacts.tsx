@@ -8,6 +8,7 @@ export interface DatabaseContact {
   user_id: string;
   contact_user_id: string;
   created_at: string;
+  last_message_at?: string;
   profiles: {
     id: string;
     username: string;
@@ -64,15 +65,29 @@ export const useContacts = () => {
         return;
       }
 
-      // Combine contacts with their profiles
+      // Get last message timestamps for each contact
+      const { data: lastMessagesData } = await supabase
+        .from('messages')
+        .select('sender_id, receiver_id, created_at')
+        .or(`and(sender_id.eq.${user.id},receiver_id.in.(${contactIds.join(',')})),and(receiver_id.eq.${user.id},sender_id.in.(${contactIds.join(',')}))`)
+        .order('created_at', { ascending: false });
+
+      // Combine contacts with their profiles and last message timestamps
       const contactsWithProfiles: DatabaseContact[] = contactsData.map(contact => {
         const profile = profilesData?.find(p => p.id === contact.contact_user_id);
+        
+        // Find the most recent message with this contact
+        const lastMessage = lastMessagesData?.find(msg => 
+          (msg.sender_id === user.id && msg.receiver_id === contact.contact_user_id) ||
+          (msg.receiver_id === user.id && msg.sender_id === contact.contact_user_id)
+        );
         
         return {
           id: contact.id,
           user_id: contact.user_id,
           contact_user_id: contact.contact_user_id,
           created_at: contact.created_at || new Date().toISOString(),
+          last_message_at: lastMessage?.created_at,
           profiles: {
             id: profile?.id || contact.contact_user_id,
             username: profile?.username || 'Unknown',
@@ -81,6 +96,16 @@ export const useContacts = () => {
             status: (profile?.status as 'online' | 'away' | 'offline') || 'offline'
           }
         };
+      });
+
+      // Sort contacts by last message timestamp (most recent first), then by display name
+      contactsWithProfiles.sort((a, b) => {
+        if (a.last_message_at && b.last_message_at) {
+          return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+        }
+        if (a.last_message_at && !b.last_message_at) return -1;
+        if (!a.last_message_at && b.last_message_at) return 1;
+        return a.profiles.display_name.localeCompare(b.profiles.display_name);
       });
 
       setContacts(contactsWithProfiles);
@@ -101,8 +126,24 @@ export const useContacts = () => {
         },
         (payload) => {
           console.log('Contact change detected:', payload);
-          // Refetch contacts when any contact changes
           fetchContacts();
+        }
+      )
+      .subscribe();
+
+    // Listen for new messages to update contact sorting
+    const messagesChannel = supabase
+      .channel(`messages-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('New message detected:', payload);
+          fetchContacts(); // Refetch to update sorting
         }
       )
       .subscribe();
@@ -119,7 +160,6 @@ export const useContacts = () => {
         },
         (payload) => {
           console.log('Profile update detected:', payload);
-          // Only refetch if the updated profile is one of our contacts
           const updatedProfileId = payload.new?.id;
           const isContactProfile = contacts.some(c => c.contact_user_id === updatedProfileId);
           if (isContactProfile) {
@@ -131,6 +171,7 @@ export const useContacts = () => {
 
     return () => {
       supabase.removeChannel(contactsChannel);
+      supabase.removeChannel(messagesChannel);
       supabase.removeChannel(profilesChannel);
     };
   }, [user]);
