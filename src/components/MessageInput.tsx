@@ -49,38 +49,38 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
 
   return (
     <>
-      <div className="p-4 border-t border-gray-700 bg-gray-800 relative">
-        <form onSubmit={handleSubmit} className="flex items-end space-x-2">
+      <div className="p-4 bg-gradient-to-r from-slate-800/80 to-blue-800/40 backdrop-blur-xl border-t border-white/10 relative">
+        <form onSubmit={handleSubmit} className="flex items-end space-x-3">
           <div className="flex-1 relative">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
+              placeholder="Type your message..."
               rows={1}
-              className="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-3 pr-20 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-32"
-              style={{ minHeight: '48px' }}
+              className="w-full bg-slate-700/50 text-white placeholder-white/50 rounded-2xl px-4 py-4 pr-24 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-slate-700/70 max-h-32 backdrop-blur-sm border border-white/10 transition-all"
+              style={{ minHeight: '56px' }}
               disabled={sending}
             />
             
-            <div className="absolute right-2 bottom-2 flex space-x-1">
+            <div className="absolute right-3 bottom-3 flex space-x-1">
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowImageUpload(true)}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                className="h-10 w-10 p-0 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all"
               >
-                <Paperclip className="h-4 w-4" />
+                <Paperclip className="h-5 w-5" />
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                className="h-10 w-10 p-0 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all"
               >
-                <Smile className="h-4 w-4" />
+                <Smile className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -88,9 +88,9 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
           <Button
             type="submit"
             disabled={!message.trim() || sending}
-            className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-14 px-6 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl shadow-lg transition-all duration-200 hover:shadow-xl"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           </Button>
         </form>
 

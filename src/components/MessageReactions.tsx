@@ -33,7 +33,7 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
   };
 
   return (
-    <div className="flex items-center gap-1 mt-1">
+    <div className="flex items-center gap-1 mt-2 flex-wrap">
       {/* Existing reactions */}
       {Object.entries(groupedReactions).map(([emoji, reactionList]) => (
         <Button
@@ -41,14 +41,14 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
           onClick={() => handleReactionClick(emoji)}
           size="sm"
           variant="ghost"
-          className={`h-6 px-2 text-xs rounded-full border ${
+          className={`h-7 px-2 text-xs rounded-full transition-all duration-200 ${
             hasUserReacted(emoji)
-              ? 'bg-blue-600 border-blue-500 text-white'
-              : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 border border-blue-400/50 text-white shadow-lg'
+              : 'bg-white/10 border border-white/20 text-white/70 hover:bg-white/20 hover:border-white/30 backdrop-blur-sm'
           }`}
         >
           <span className="mr-1">{emoji}</span>
-          <span>{reactionList.length}</span>
+          <span className="font-medium">{reactionList.length}</span>
         </Button>
       ))}
 
@@ -58,7 +58,7 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           size="sm"
           variant="ghost"
-          className="h-6 w-6 p-0 text-gray-400 hover:text-gray-200 hover:bg-gray-600 rounded-full"
+          className="h-7 w-7 p-0 text-white/50 hover:text-white/80 hover:bg-white/10 rounded-full transition-all duration-200 backdrop-blur-sm border border-white/10 hover:border-white/20"
         >
           <Plus className="h-3 w-3" />
         </Button>
@@ -69,8 +69,8 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
               className="fixed inset-0 z-10"
               onClick={() => setShowEmojiPicker(false)}
             />
-            <div className="absolute bottom-full left-0 mb-2 bg-gray-800 border border-gray-600 rounded-lg p-2 z-20 shadow-lg">
-              <div className="flex gap-1">
+            <div className="absolute bottom-full left-0 mb-2 bg-slate-800/95 backdrop-blur-xl border border-white/20 rounded-xl p-3 z-20 shadow-2xl">
+              <div className="flex gap-2">
                 {QUICK_EMOJIS.map((emoji) => (
                   <Button
                     key={emoji}
@@ -80,7 +80,7 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
                     }}
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-gray-700 rounded"
+                    className="h-10 w-10 p-0 hover:bg-white/10 rounded-xl transition-all duration-200 text-lg hover:scale-110"
                   >
                     {emoji}
                   </Button>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -37,8 +36,11 @@ const Index = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-white text-lg font-medium">Loading your conversations...</div>
+        </div>
       </div>
     );
   }
@@ -82,7 +84,14 @@ const Index = () => {
   const currentMessages = selectedContactId ? directMessages : groupMessages;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white flex relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl"></div>
+      </div>
+
       <Sidebar
         contacts={contacts}
         groupChats={groupChats}
@@ -102,7 +111,7 @@ const Index = () => {
       />
       
       {/* Main chat area with responsive padding */}
-      <div className="flex-1 flex flex-col pt-16 md:pt-0">
+      <div className="flex-1 flex flex-col pt-16 md:pt-0 relative z-10">
         <ChatArea
           selectedContact={selectedContact}
           selectedGroupChat={selectedGroupChat}

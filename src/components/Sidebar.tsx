@@ -8,7 +8,7 @@ import UserProfile from './UserProfile';
 import AddContactModal from './AddContactModal';
 import CreateGroupModal from './CreateGroupModal';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, LogOut, Settings, Menu, X, Users } from 'lucide-react';
+import { Plus, Search, LogOut, Settings, Menu, X, Users, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
@@ -63,102 +63,127 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const sidebarContent = (
     <>
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      {/* Enhanced Header */}
+      <div className="p-4 bg-gradient-to-r from-slate-800/80 to-blue-800/50 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg md:text-xl font-bold text-blue-400 truncate">Blueteck Message</h1>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Blueteck
+            </h1>
+          </div>
           
           {/* Mobile menu close button */}
           <Button
             onClick={() => setIsMobileMenuOpen(false)}
             size="sm"
             variant="ghost"
-            className="md:hidden text-gray-300 hover:text-white p-1"
+            className="md:hidden text-white/80 hover:text-white hover:bg-white/10 p-1 rounded-lg"
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
         
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-4">
           <Button
             onClick={() => setShowAddModal(true)}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white flex-1 md:flex-none"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg"
           >
             <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Add Contact</span>
+            <span className="text-xs">Add Contact</span>
           </Button>
           <Button
             onClick={() => setShowCreateGroupModal(true)}
             size="sm"
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700 flex-1 md:flex-none"
+            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg"
           >
             <Users className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">New Group</span>
+            <span className="text-xs">New Group</span>
           </Button>
+        </div>
+
+        <div className="flex gap-2 mb-4">
           <Button
             onClick={() => navigate('/settings')}
             size="sm"
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700 flex-1 md:flex-none"
+            variant="ghost"
+            className="flex-1 text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
           >
             <Settings className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Settings</span>
+            <span className="text-xs">Settings</span>
           </Button>
           <Button
             onClick={onSignOut}
             size="sm"
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700 flex-1 md:flex-none"
+            variant="ghost"
+            className="flex-1 text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
           >
             <LogOut className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Logout</span>
+            <span className="text-xs">Logout</span>
           </Button>
         </div>
         
-        {/* Search */}
+        {/* Enhanced Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
           <input
             type="text"
-            placeholder="Search contacts and groups..."
+            placeholder="Search conversations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full bg-white/10 text-white placeholder-white/50 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-white/20 text-sm backdrop-blur-sm border border-white/20 transition-all"
           />
         </div>
       </div>
 
       {/* User Profile */}
-      <UserProfile user={currentUser} />
+      <div className="border-b border-white/10">
+        <UserProfile user={currentUser} />
+      </div>
 
       {/* Group Chats Section */}
-      <div className="border-b border-gray-700">
-        <div className="px-4 py-2">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Group Chats</h3>
+      <div className="border-b border-white/10">
+        <div className="px-4 py-3 bg-gradient-to-r from-slate-800/40 to-transparent">
+          <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider flex items-center">
+            <Users className="h-4 w-4 mr-2" />
+            Group Chats
+          </h3>
         </div>
-        <div className="max-h-40 overflow-y-auto">
+        <div className="max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
           {filteredGroupChats.map((group) => (
             <div
               key={group.id}
               onClick={() => handleGroupSelect(group.id)}
-              className={`flex items-center px-4 py-3 hover:bg-gray-700 cursor-pointer transition-colors ${
-                selectedGroupChatId === group.id ? 'bg-gray-700 border-r-2 border-blue-500' : ''
+              className={`group flex items-center px-4 py-3 hover:bg-gradient-to-r hover:from-white/10 hover:to-transparent cursor-pointer transition-all duration-200 ${
+                selectedGroupChatId === group.id 
+                  ? 'bg-gradient-to-r from-blue-600/30 to-purple-600/20 border-r-2 border-blue-400' 
+                  : ''
               }`}
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                👥
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-semibold mr-3 shadow-lg group-hover:scale-105 transition-transform">
+                  <Users className="h-6 w-6" />
+                </div>
+                {group.is_general && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-2 w-2 text-yellow-800" />
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-white truncate">{group.name}</p>
                   {group.is_general && (
-                    <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">General</span>
+                    <span className="text-xs bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900 px-2 py-1 rounded-full font-medium">
+                      General
+                    </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 truncate">
-                  {group.description || 'Group chat'}
+                <p className="text-xs text-white/60 truncate">
+                  {group.description || 'Group conversation'}
                 </p>
               </div>
             </div>
@@ -167,9 +192,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Contact List */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-2">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Direct Messages</h3>
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+        <div className="px-4 py-3 bg-gradient-to-r from-slate-800/40 to-transparent">
+          <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Direct Messages</h3>
         </div>
         <ContactList
           contacts={filteredContacts}
@@ -197,30 +222,30 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* Enhanced Mobile Menu Button */}
       <Button
         onClick={() => setIsMobileMenuOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 bg-gray-800 hover:bg-gray-700 text-white p-2"
+        className="md:hidden fixed top-4 left-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm"
       >
         <Menu className="h-5 w-5" />
       </Button>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex w-80 bg-gray-800 border-r border-gray-700 flex-col">
+      <div className="hidden md:flex w-80 bg-slate-900/50 backdrop-blur-xl border-r border-white/10 flex-col shadow-2xl">
         {sidebarContent}
       </div>
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div className="md:hidden fixed inset-0 z-50 flex animate-fade-in">
           {/* Background overlay */}
           <div
-            className="flex-1 bg-black bg-opacity-50"
+            className="flex-1 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           
           {/* Sidebar */}
-          <div className="w-80 max-w-[85vw] bg-gray-800 border-r border-gray-700 flex flex-col">
+          <div className="w-80 max-w-[85vw] bg-slate-900/95 backdrop-blur-xl border-r border-white/20 flex flex-col shadow-2xl animate-slide-in-right">
             {sidebarContent}
           </div>
         </div>
