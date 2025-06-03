@@ -32,8 +32,11 @@ const MessageList: React.FC<MessageListProps> = ({
     }
   }, [messages]);
 
+  // Create a unique key for each chat to force re-render and separate scroll state
+  const chatKey = isGroupChat ? `group-${groupChat?.id}` : `dm-${contact?.id}`;
+
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+    <ScrollArea key={chatKey} className="flex-1 p-4" ref={scrollAreaRef}>
       <div className="space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full min-h-[200px]">
