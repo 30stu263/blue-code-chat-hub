@@ -19,21 +19,25 @@ const MessageList: React.FC<MessageListProps> = ({
   contact,
   groupChat
 }) => {
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const dmScrollAreaRef = useRef<HTMLDivElement>(null);
+  const groupScrollAreaRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
+  
+  // Use the appropriate scroll ref based on chat type
+  const currentScrollRef = isGroupChat ? groupScrollAreaRef : dmScrollAreaRef;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+    if (currentScrollRef.current) {
+      const scrollContainer = currentScrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  }, [messages]);
+  }, [messages, currentScrollRef]);
 
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+    <ScrollArea className="flex-1 p-4" ref={currentScrollRef}>
       <div className="space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full min-h-[200px]">
