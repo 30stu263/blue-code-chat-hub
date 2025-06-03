@@ -1,11 +1,9 @@
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatabaseMessage } from '../hooks/useMessages';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
-import MessageReactions from './MessageReactions';
-import { Users, MessageCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface MessageListProps {
   messages: DatabaseMessage[];
@@ -14,143 +12,85 @@ interface MessageListProps {
   groupChat?: DatabaseGroupChat;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId, contact, groupChat }) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [userProfiles, setUserProfiles] = useState<Record<string, { display_name: string; avatar_emoji: string }>>({});
+const MessageList: React.FC<MessageListProps> = ({
+  messages,
+  currentUserId,
+  contact,
+  groupChat
+}) => {
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const isGroupChat = !!groupChat;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
   }, [messages]);
 
-  // Fetch user profiles for group chat messages
-  useEffect(() => {
-    if (groupChat && messages.length > 0) {
-      const userIds = [...new Set(messages.map(msg => msg.sender_id))];
-      
-      const fetchProfiles = async () => {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, display_name, avatar_emoji')
-          .in('id', userIds);
-
-        if (profiles) {
-          const profileMap = profiles.reduce((acc, profile) => {
-            acc[profile.id] = {
-              display_name: profile.display_name || 'Unknown User',
-              avatar_emoji: profile.avatar_emoji || '👤'
-            };
-            return acc;
-          }, {} as Record<string, { display_name: string; avatar_emoji: string }>);
-          
-          setUserProfiles(profileMap);
-        }
-      };
-
-      fetchProfiles();
-    }
-  }, [groupChat, messages]);
-
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const renderMessageContent = (message: DatabaseMessage) => {
-    if (message.message_type === 'image') {
-      return (
-        <div className="max-w-sm">
-          <img
-            src={message.content}
-            alt="Shared image"
-            className="rounded-xl max-w-full h-auto cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
-            onClick={() => window.open(message.content, '_blank')}
-          />
-        </div>
-      );
-    }
-    return <p className="text-sm leading-relaxed">{message.content}</p>;
-  };
-
-  const isGroupChat = !!groupChat;
-  const chatName = isGroupChat ? groupChat.name : contact?.profiles.display_name;
-  const chatAvatar = isGroupChat ? <Users className="h-8 w-8" /> : contact?.profiles.avatar_emoji;
-
-  if (messages.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
-          <div className="relative mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-3xl mx-auto backdrop-blur-sm border border-white/10">
-              {chatAvatar}
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <MessageCircle className="h-4 w-4 text-white" />
-            </div>
-          </div>
-          <h3 className="text-xl font-semibold text-white mb-2">No messages yet</h3>
-          <p className="text-white/60 leading-relaxed">
-            {isGroupChat 
-              ? `Start the conversation in ${chatName}! Share your thoughts and connect with the group.`
-              : `Send a message to ${chatName} to start your conversation!`
-            }
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-      {messages.map((message, index) => {
-        const isOwn = message.sender_id === currentUserId;
-        const showAvatar = !isOwn && (index === 0 || messages[index - 1].sender_id !== message.sender_id);
-        const senderProfile = userProfiles[message.sender_id];
-        
-        return (
-          <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}>
-            <div className={`flex max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse' : 'flex-row'} group`}>
-              {!isOwn && (
-                <div className={`w-10 h-10 flex items-center justify-center mr-3 flex-shrink-0 ${showAvatar ? '' : 'invisible'}`}>
-                  {showAvatar && (
-                    <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center text-sm shadow-lg">
-                      {isGroupChat ? (senderProfile?.avatar_emoji || '👤') : contact?.profiles.avatar_emoji}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <div className={`
-                px-4 py-3 rounded-2xl relative shadow-lg backdrop-blur-sm border transition-all duration-200 group-hover:shadow-xl
-                ${isOwn 
-                  ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white border-blue-500/30 rounded-br-md' 
-                  : 'bg-slate-800/80 text-white border-white/10 rounded-bl-md'
-                }
-              `}>
-                {/* Show sender name in group chats for non-own messages */}
-                {isGroupChat && !isOwn && showAvatar && (
-                  <p className="text-xs text-white/70 mb-2 font-medium">
-                    {senderProfile?.display_name || 'Unknown User'}
-                  </p>
-                )}
-                {renderMessageContent(message)}
-                <div className="flex items-center justify-between mt-2">
-                  <p className={`text-xs ${isOwn ? 'text-blue-200' : 'text-white/50'}`}>
-                    {formatTime(message.created_at)}
-                  </p>
-                </div>
-                
-                {/* Message reactions */}
-                <MessageReactions messageId={message.id} />
+    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <div className="space-y-4">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full min-h-[200px]">
+            <div className="text-center text-white/60">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 backdrop-blur-sm border border-white/10">
+                💭
               </div>
+              <p className="font-medium mb-1">No messages yet</p>
+              <p className="text-sm text-white/40">Start the conversation!</p>
             </div>
           </div>
-        );
-      })}
-      <div ref={messagesEndRef} />
-    </div>
+        ) : (
+          messages.map((message) => {
+            const isOwnMessage = message.sender_id === currentUserId;
+            const sender = isGroupChat
+              ? message.profiles
+              : isOwnMessage
+                ? null
+                : contact?.profiles;
+
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                  {/* Avatar - only show for first message in a group in group chats */}
+                  {!isOwnMessage && isGroupChat && (
+                    <Avatar className="w-6 h-6 mb-1">
+                      <AvatarImage src={`https://avatar.vercel.sh/${sender?.username}.png`} />
+                      <AvatarFallback>{sender?.display_name?.charAt(0).toUpperCase() || '?'}</AvatarFallback>
+                    </Avatar>
+                  )}
+
+                  <div
+                    className={`
+                      rounded-2xl px-4 py-2 max-w-[75%] break-words
+                      ${isOwnMessage
+                        ? 'bg-blue-600 text-white rounded-br-none'
+                        : 'bg-slate-700 text-white rounded-bl-none'
+                      }
+                    `}
+                  >
+                    <p>{message.content}</p>
+                    {message.message_type === 'image' && (
+                      <img src={message.content} alt="Uploaded" className="mt-2 rounded-md max-w-full" />
+                    )}
+                    <div className="text-xs text-white/60 mt-1">
+                      {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </ScrollArea>
   );
 };
 
