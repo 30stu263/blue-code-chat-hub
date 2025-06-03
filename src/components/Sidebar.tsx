@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
@@ -7,7 +6,6 @@ import ContactList from './ContactList';
 import UserProfile from './UserProfile';
 import AddContactModal from './AddContactModal';
 import CreateGroupModal from './CreateGroupModal';
-import UserListModal from './UserListModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, LogOut, Settings, Menu, X, Users, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +38,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
-  const [showUserListModal, setShowUserListModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -107,30 +104,24 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="flex gap-2 mb-4">
           <Button
             onClick={() => navigate('/settings')}
             size="sm"
             variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
+            className="flex-1 text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
           >
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => setShowUserListModal(true)}
-            size="sm"
-            variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
-          >
-            <Users className="h-4 w-4" />
+            <Settings className="h-4 w-4 mr-1" />
+            <span className="text-xs">Settings</span>
           </Button>
           <Button
             onClick={onSignOut}
             size="sm"
             variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
+            className="flex-1 text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 mr-1" />
+            <span className="text-xs">Logout</span>
           </Button>
         </div>
         
@@ -223,12 +214,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         <CreateGroupModal
           onClose={() => setShowCreateGroupModal(false)}
           onCreateGroup={onCreateGroup}
-        />
-      )}
-
-      {showUserListModal && (
-        <UserListModal
-          onClose={() => setShowUserListModal(false)}
         />
       )}
     </>

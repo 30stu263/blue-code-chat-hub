@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatabaseMessage } from '../hooks/useMessages';
@@ -32,11 +31,8 @@ const MessageList: React.FC<MessageListProps> = ({
     }
   }, [messages]);
 
-  // Create a unique key for each chat to force re-render and separate scroll state
-  const chatKey = isGroupChat ? `group-${groupChat?.id}` : `dm-${contact?.id}`;
-
   return (
-    <ScrollArea key={chatKey} className="flex-1 p-4" ref={scrollAreaRef}>
+    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
       <div className="space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -51,6 +47,11 @@ const MessageList: React.FC<MessageListProps> = ({
         ) : (
           messages.map((message) => {
             const isOwnMessage = message.sender_id === currentUserId;
+            const sender = isGroupChat
+              ? message.profiles
+              : isOwnMessage
+                ? null
+                : contact?.profiles;
 
             return (
               <div
@@ -61,8 +62,8 @@ const MessageList: React.FC<MessageListProps> = ({
                   {/* Avatar - only show for first message in a group in group chats */}
                   {!isOwnMessage && isGroupChat && (
                     <Avatar className="w-6 h-6 mb-1">
-                      <AvatarImage src={`https://avatar.vercel.sh/user.png`} />
-                      <AvatarFallback>?</AvatarFallback>
+                      <AvatarImage src={`https://avatar.vercel.sh/${sender?.username}.png`} />
+                      <AvatarFallback>{sender?.display_name?.charAt(0).toUpperCase() || '?'}</AvatarFallback>
                     </Avatar>
                   )}
 

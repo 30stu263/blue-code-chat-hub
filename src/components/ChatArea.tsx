@@ -5,15 +5,8 @@ import { DatabaseGroupChat } from '../hooks/useGroupChats';
 import { DatabaseMessage } from '../hooks/useMessages';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
-import ChatInfoModal from './ChatInfoModal';
 import { Button } from '@/components/ui/button';
 import { MoreVertical, Users, Crown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface ChatAreaProps {
   contact?: DatabaseContact;
@@ -25,7 +18,6 @@ interface ChatAreaProps {
 
 const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, currentUserId, onSendMessage }) => {
   const [isTyping, setIsTyping] = useState(false);
-  const [showChatInfo, setShowChatInfo] = useState(false);
 
   const chatPartner = contact || groupChat;
   const isGroupChat = !!groupChat;
@@ -105,25 +97,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, curre
           </div>
 
           <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg"
-                >
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                <DropdownMenuItem 
-                  onClick={() => setShowChatInfo(true)}
-                  className="text-white hover:bg-gray-700"
-                >
-                  {isGroupChat ? 'Group Info' : 'Contact Info'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -138,15 +118,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, curre
 
       {/* Message Input */}
       <MessageInput onSendMessage={onSendMessage} />
-
-      {/* Chat Info Modal */}
-      {showChatInfo && (
-        <ChatInfoModal
-          contact={contact}
-          groupChat={groupChat}
-          onClose={() => setShowChatInfo(false)}
-        />
-      )}
     </div>
   );
 };
