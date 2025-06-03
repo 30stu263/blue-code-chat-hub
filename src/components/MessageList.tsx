@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatabaseMessage } from '../hooks/useMessages';
@@ -47,11 +48,6 @@ const MessageList: React.FC<MessageListProps> = ({
         ) : (
           messages.map((message) => {
             const isOwnMessage = message.sender_id === currentUserId;
-            const sender = isGroupChat
-              ? message.profiles
-              : isOwnMessage
-                ? null
-                : contact?.profiles;
 
             return (
               <div
@@ -62,8 +58,8 @@ const MessageList: React.FC<MessageListProps> = ({
                   {/* Avatar - only show for first message in a group in group chats */}
                   {!isOwnMessage && isGroupChat && (
                     <Avatar className="w-6 h-6 mb-1">
-                      <AvatarImage src={`https://avatar.vercel.sh/${sender?.username}.png`} />
-                      <AvatarFallback>{sender?.display_name?.charAt(0).toUpperCase() || '?'}</AvatarFallback>
+                      <AvatarImage src={`https://avatar.vercel.sh/user.png`} />
+                      <AvatarFallback>?</AvatarFallback>
                     </Avatar>
                   )}
 

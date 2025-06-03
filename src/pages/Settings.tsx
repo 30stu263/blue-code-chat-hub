@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EmojiPicker from '../components/EmojiPicker';
 
@@ -21,10 +21,12 @@ const Settings = () => {
     username: '',
     display_name: '',
     avatar_emoji: '👤',
-    status: 'online' as 'online' | 'away' | 'offline'
+    status: 'online' as 'online' | 'away' | 'offline',
+    avatar_url: null as string | null
   });
   
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
@@ -47,9 +49,70 @@ const Settings = () => {
         username: data.username || '',
         display_name: data.display_name || '',
         avatar_emoji: data.avatar_emoji || '👤',
-        status: (data.status as 'online' | 'away' | 'offline') || 'online'
+        status: (data.status as 'online' | 'away' | 'offline') || 'online',
+        avatar_url: data.avatar_url || null
       });
     }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be smaller than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setProfile(prev => ({ ...prev, avatar_url: data.publicUrl }));
+      
+      toast({
+        title: "Success",
+        description: "Avatar uploaded successfully"
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload avatar",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAvatar = () => {
+    setProfile(prev => ({ ...prev, avatar_url: null }));
   };
 
   const handleSave = async () => {
@@ -62,6 +125,7 @@ const Settings = () => {
         username: profile.username,
         display_name: profile.display_name,
         avatar_emoji: profile.avatar_emoji,
+        avatar_url: profile.avatar_url,
         status: profile.status,
         updated_at: new Date().toISOString()
       })
@@ -131,7 +195,57 @@ const Settings = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-300">Avatar Emoji</Label>
+              <Label className="text-gray-300">Profile Picture</Label>
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center text-2xl relative overflow-hidden">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    profile.avatar_emoji
+                  )}
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      disabled={uploading}
+                      asChild
+                    >
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? 'Uploading...' : 'Upload Image'}
+                      </span>
+                    </Button>
+                  </label>
+                  {profile.avatar_url && (
+                    <Button
+                      onClick={removeAvatar}
+                      variant="outline"
+                      size="sm"
+                      className="border-red-600 text-red-400 hover:bg-red-900/20"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300">Avatar Emoji (fallback)</Label>
               <div className="flex items-center space-x-2">
                 <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-2xl">
                   {profile.avatar_emoji}
