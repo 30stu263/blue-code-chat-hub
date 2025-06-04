@@ -1,9 +1,10 @@
+
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { DatabaseMessage } from '../hooks/useMessages';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
-import { DatabaseMessage } from '../hooks/useMessages';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface MessageListProps {
   messages: DatabaseMessage[];
@@ -16,20 +17,18 @@ const MessageList: React.FC<MessageListProps> = ({
   messages,
   currentUserId,
   contact,
-  groupChat,
+  groupChat
 }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
 
-  // Scroll to bottom on new messages
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Unique chat key for correct scroll resetting
+  // Create a unique key for each chat to force re-render and separate scroll state
   const chatKey = React.useMemo(() => {
     if (isGroupChat && groupChat) {
       return `group-${groupChat.id}-${groupChat.name}`;
@@ -92,7 +91,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         {/* Display name for group chats */}
                         {!isOwnMessage && isGroupChat && showAvatar && (
                           <div className="text-xs text-white/60 mb-1 px-1">
-                            {message.senderProfile?.display_name || `User ${message.sender_id.slice(0, 8)}`}
+                            User {message.sender_id.slice(0, 8)}
                           </div>
                         )}
 
@@ -105,16 +104,20 @@ const MessageList: React.FC<MessageListProps> = ({
                             }
                           `}
                         >
-                          {message.content}
-                        </div>
-                        <div className="text-[10px] text-white/40 mt-1 px-1">
-                          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <p className="leading-relaxed">{message.content}</p>
+                          {message.message_type === 'image' && (
+                            <img src={message.content} alt="Uploaded" className="mt-2 rounded-md max-w-full" />
+                          )}
+                          <div className="text-xs text-white/60 mt-1">
+                            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </>
           )}
         </div>
