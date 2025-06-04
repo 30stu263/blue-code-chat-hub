@@ -20,6 +20,7 @@ const MessageList: React.FC<MessageListProps> = ({
   groupChat
 }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
 
   // Auto-scroll to bottom when new messages arrive
@@ -42,19 +43,47 @@ const MessageList: React.FC<MessageListProps> = ({
     return 'no-chat';
   }, [isGroupChat, groupChat, contact]);
 
-  // Prevent scroll events from bubbling up
-  const handleScrollAreaWheel = (e: React.WheelEvent) => {
+  // Comprehensive scroll event isolation
+  const handleScrollEvents = (e: React.WheelEvent | React.UIEvent) => {
+    e.stopPropagation();
+    e.preventDefault = () => {}; // Prevent any default behavior
+  };
+
+  const handleMouseEvents = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchEvents = (e: React.TouchEvent) => {
     e.stopPropagation();
   };
 
   return (
     <div 
-      key={chatKey}
-      className="flex-1 relative"
-      onWheel={handleScrollAreaWheel}
+      key={`container-${chatKey}`}
+      ref={containerRef}
+      className="flex-1 relative overflow-hidden"
+      onWheel={handleScrollEvents}
+      onScroll={handleScrollEvents}
+      onMouseDown={handleMouseEvents}
+      onMouseMove={handleMouseEvents}
+      onMouseUp={handleMouseEvents}
+      onTouchStart={handleTouchEvents}
+      onTouchMove={handleTouchEvents}
+      onTouchEnd={handleTouchEvents}
+      style={{ isolation: 'isolate' }}
     >
-      <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
+      <ScrollArea 
+        key={`scroll-${chatKey}`}
+        className="h-full p-4" 
+        ref={scrollAreaRef}
+        onWheel={handleScrollEvents}
+        onScroll={handleScrollEvents}
+      >
+        <div 
+          className="space-y-4"
+          onWheel={handleScrollEvents}
+          onScroll={handleScrollEvents}
+        >
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[200px]">
               <div className="text-center text-white/60">
