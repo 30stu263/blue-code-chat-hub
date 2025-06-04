@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Crown, Lock, Users, AlertTriangle } from 'lucide-react';
@@ -47,7 +46,6 @@ const UpdatesChatArea: React.FC<UpdatesChatAreaProps> = ({
                 <Lock className="h-2 w-2 text-yellow-800" />
               </div>
             </div>
-            
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <h3 className="font-semibold text-white text-lg">{groupChat.name}</h3>
@@ -77,33 +75,14 @@ const UpdatesChatArea: React.FC<UpdatesChatAreaProps> = ({
               >
                 Forfeit Control
               </Button>
-            ) : !isChatLocked ? (
-              <Button
-                onClick={() => setShowPasswordModal(true)}
-                size="sm"
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
-              >
-                <Lock className="h-4 w-4 mr-1" />
-                Take Control
-              </Button>
-            ) : (
-              <div className="flex items-center space-x-2 text-yellow-400 text-sm">
-                <AlertTriangle className="h-4 w-4" />
-                <span>Locked</span>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
 
-      {/* Status Banner */}
-      {isChatLocked && (
-        <div className="p-3 bg-gradient-to-r from-red-600/20 to-orange-600/20 border-b border-red-400/20">
-          <div className="flex items-center justify-center space-x-2 text-white/80">
-            <Lock className="h-4 w-4" />
-            <span className="text-sm">This chat is currently controlled by another user. You cannot send messages.</span>
-          </div>
-        </div>
+      {/* Message Input - moved to top */}
+      {(isUserInControl || !control?.is_active) && (
+        <MessageInput onSendMessage={onSendMessage} />
       )}
 
       {/* Messages */}
@@ -112,11 +91,6 @@ const UpdatesChatArea: React.FC<UpdatesChatAreaProps> = ({
         currentUserId={currentUserId}
         groupChat={groupChat}
       />
-
-      {/* Message Input - Only show if user has control or chat is unlocked */}
-      {(isUserInControl || !control?.is_active) && (
-        <MessageInput onSendMessage={onSendMessage} />
-      )}
 
       {/* Password Modal */}
       {showPasswordModal && (
