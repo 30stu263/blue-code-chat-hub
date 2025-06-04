@@ -38,17 +38,34 @@ const MessageList: React.FC<MessageListProps> = ({
     return 'no-chat';
   }, [isGroupChat, groupChat, contact]);
 
+  // Prevent scroll events from bubbling up to parent components
+  const handleScroll = (e: React.UIEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div 
       key={`container-${chatKey}`}
       className="flex-1 flex flex-col overflow-hidden"
+      onScroll={handleScroll}
+      onWheel={handleWheel}
+      style={{ contain: 'layout style' }}
     >
-      <ScrollArea 
-        key={`scroll-${chatKey}`}
-        className="flex-1 p-4" 
+      <div 
+        className="flex-1 p-4 overflow-y-auto overflow-x-hidden"
+        onScroll={handleScroll}
+        onWheel={handleWheel}
         ref={scrollAreaRef}
+        style={{ 
+          scrollBehavior: 'smooth',
+          contain: 'layout style paint'
+        }}
       >
-        <div className="flex flex-col space-y-3 min-h-full justify-end">
+        <div className="flex flex-col space-y-2">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[200px]">
               <div className="text-center text-white/60">
@@ -70,16 +87,16 @@ const MessageList: React.FC<MessageListProps> = ({
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${
-                      showAvatar ? 'mt-4' : 'mt-1'
-                    }`}
+                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-2`}
                   >
                     <div className={`flex ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-[75%]`}>
                       {/* Avatar - only show for first message in a sequence in group chats */}
                       {showAvatar && (
                         <Avatar className="w-8 h-8 mb-1">
                           <AvatarImage src={`https://avatar.vercel.sh/user${message.sender_id}.png`} />
-                          <AvatarFallback>?</AvatarFallback>
+                          <AvatarFallback>
+                            {message.sender_display_name?.charAt(0) || '?'}
+                          </AvatarFallback>
                         </Avatar>
                       )}
                       
@@ -91,13 +108,13 @@ const MessageList: React.FC<MessageListProps> = ({
                         {/* Display name for group chats */}
                         {!isOwnMessage && isGroupChat && showAvatar && (
                           <div className="text-xs text-white/60 mb-1 px-1">
-                            User {message.sender_id.slice(0, 8)}
+                            {message.sender_display_name || `User ${message.sender_id.slice(0, 8)}`}
                           </div>
                         )}
 
                         <div
                           className={`
-                            rounded-2xl px-4 py-2 break-words whitespace-pre-wrap
+                            rounded-2xl px-4 py-3 break-words whitespace-pre-wrap leading-relaxed
                             ${isOwnMessage
                               ? 'bg-blue-600 text-white rounded-br-md'
                               : 'bg-slate-700 text-white rounded-bl-md'
@@ -108,7 +125,7 @@ const MessageList: React.FC<MessageListProps> = ({
                           {message.message_type === 'image' && (
                             <img src={message.content} alt="Uploaded" className="mt-2 rounded-md max-w-full" />
                           )}
-                          <div className="text-xs text-white/60 mt-1">
+                          <div className="text-xs text-white/60 mt-2 opacity-75">
                             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
@@ -121,7 +138,7 @@ const MessageList: React.FC<MessageListProps> = ({
             </>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };
