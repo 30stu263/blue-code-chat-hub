@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DatabaseContact } from '../hooks/useContacts';
 import { DatabaseGroupChat } from '../hooks/useGroupChats';
@@ -127,9 +128,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, curre
         </div>
       </div>
 
-      {/* Message Input - moved to top */}
-      <MessageInput onSendMessage={onSendMessage} />
-
       {/* Messages */}
       <MessageList
         messages={messages}
@@ -137,6 +135,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({ contact, groupChat, messages, curre
         contact={contact}
         groupChat={groupChat}
       />
+
+      {/* Message Input */}
+      <MessageInput onSendMessage={onSendMessage} />
 
       {/* Chat Info Modal */}
       {showChatInfo && (
