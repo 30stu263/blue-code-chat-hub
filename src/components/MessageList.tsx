@@ -20,17 +20,12 @@ const MessageList: React.FC<MessageListProps> = ({
   groupChat
 }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Create a unique key for each chat to force re-render and separate scroll state
@@ -43,47 +38,17 @@ const MessageList: React.FC<MessageListProps> = ({
     return 'no-chat';
   }, [isGroupChat, groupChat, contact]);
 
-  // Comprehensive scroll event isolation
-  const handleScrollEvents = (e: React.WheelEvent | React.UIEvent) => {
-    e.stopPropagation();
-    e.preventDefault = () => {}; // Prevent any default behavior
-  };
-
-  const handleMouseEvents = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-  const handleTouchEvents = (e: React.TouchEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div 
       key={`container-${chatKey}`}
-      ref={containerRef}
-      className="flex-1 relative overflow-hidden"
-      onWheel={handleScrollEvents}
-      onScroll={handleScrollEvents}
-      onMouseDown={handleMouseEvents}
-      onMouseMove={handleMouseEvents}
-      onMouseUp={handleMouseEvents}
-      onTouchStart={handleTouchEvents}
-      onTouchMove={handleTouchEvents}
-      onTouchEnd={handleTouchEvents}
-      style={{ isolation: 'isolate' }}
+      className="flex-1 flex flex-col overflow-hidden"
     >
       <ScrollArea 
         key={`scroll-${chatKey}`}
-        className="h-full p-4" 
+        className="flex-1 p-4" 
         ref={scrollAreaRef}
-        onWheel={handleScrollEvents}
-        onScroll={handleScrollEvents}
       >
-        <div 
-          className="space-y-4"
-          onWheel={handleScrollEvents}
-          onScroll={handleScrollEvents}
-        >
+        <div className="flex flex-col space-y-3 min-h-full justify-end">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[200px]">
               <div className="text-center text-white/60">
@@ -95,44 +60,65 @@ const MessageList: React.FC<MessageListProps> = ({
               </div>
             </div>
           ) : (
-            messages.map((message) => {
-              const isOwnMessage = message.sender_id === currentUserId;
+            <>
+              {messages.map((message, index) => {
+                const isOwnMessage = message.sender_id === currentUserId;
+                const previousMessage = index > 0 ? messages[index - 1] : null;
+                const showAvatar = !isOwnMessage && isGroupChat && 
+                  (!previousMessage || previousMessage.sender_id !== message.sender_id);
 
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                    {/* Avatar - only show for first message in a group in group chats */}
-                    {!isOwnMessage && isGroupChat && (
-                      <Avatar className="w-6 h-6 mb-1">
-                        <AvatarImage src={`https://avatar.vercel.sh/user.png`} />
-                        <AvatarFallback>?</AvatarFallback>
-                      </Avatar>
-                    )}
-
-                    <div
-                      className={`
-                        rounded-2xl px-4 py-2 max-w-[75%] break-words
-                        ${isOwnMessage
-                          ? 'bg-blue-600 text-white rounded-br-none'
-                          : 'bg-slate-700 text-white rounded-bl-none'
-                        }
-                      `}
-                    >
-                      <p>{message.content}</p>
-                      {message.message_type === 'image' && (
-                        <img src={message.content} alt="Uploaded" className="mt-2 rounded-md max-w-full" />
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${
+                      showAvatar ? 'mt-4' : 'mt-1'
+                    }`}
+                  >
+                    <div className={`flex ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-[75%]`}>
+                      {/* Avatar - only show for first message in a sequence in group chats */}
+                      {showAvatar && (
+                        <Avatar className="w-8 h-8 mb-1">
+                          <AvatarImage src={`https://avatar.vercel.sh/user${message.sender_id}.png`} />
+                          <AvatarFallback>?</AvatarFallback>
+                        </Avatar>
                       )}
-                      <div className="text-xs text-white/60 mt-1">
-                        {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      
+                      {!showAvatar && !isOwnMessage && isGroupChat && (
+                        <div className="w-8 h-8" /> // Spacer for alignment
+                      )}
+
+                      <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                        {/* Display name for group chats */}
+                        {!isOwnMessage && isGroupChat && showAvatar && (
+                          <div className="text-xs text-white/60 mb-1 px-1">
+                            User {message.sender_id.slice(0, 8)}
+                          </div>
+                        )}
+
+                        <div
+                          className={`
+                            rounded-2xl px-4 py-2 break-words whitespace-pre-wrap
+                            ${isOwnMessage
+                              ? 'bg-blue-600 text-white rounded-br-md'
+                              : 'bg-slate-700 text-white rounded-bl-md'
+                            }
+                          `}
+                        >
+                          <p className="leading-relaxed">{message.content}</p>
+                          {message.message_type === 'image' && (
+                            <img src={message.content} alt="Uploaded" className="mt-2 rounded-md max-w-full" />
+                          )}
+                          <div className="text-xs text-white/60 mt-1">
+                            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
           )}
         </div>
       </ScrollArea>
