@@ -59,18 +59,15 @@ const MessageList: React.FC<MessageListProps> = ({
     fetchUserProfiles();
   }, [isGroupChat, messages]);
 
-  // Create a unique key for each chat to force re-render and separate scroll state
-  const chatKey = React.useMemo(() => {
-    if (isGroupChat && groupChat) {
-      return `group-${groupChat.id}-${groupChat.name}`;
-    } else if (contact) {
-      return `dm-${contact.contact_user_id}-${contact.id}`;
+  // Auto-scroll to bottom when new messages arrive (like WhatsApp)
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
     }
-    return 'no-chat';
-  }, [isGroupChat, groupChat, contact]);
-
-  // Reverse messages to show newest at top (like WhatsApp)
-  const reversedMessages = [...messages].reverse();
+  }, [messages]);
 
   const getUserDisplayName = (userId: string): string => {
     if (userId === currentUserId) return 'You';
@@ -87,12 +84,8 @@ const MessageList: React.FC<MessageListProps> = ({
   };
 
   return (
-    <div 
-      key={`container-${chatKey}`}
-      className="flex-1 flex flex-col overflow-hidden"
-    >
+    <div className="flex-1 flex flex-col overflow-hidden">
       <ScrollArea 
-        key={`scroll-${chatKey}`}
         className="flex-1 p-4" 
         ref={scrollAreaRef}
       >
@@ -108,11 +101,11 @@ const MessageList: React.FC<MessageListProps> = ({
               </div>
             </div>
           ) : (
-            reversedMessages.map((message, index) => {
+            messages.map((message, index) => {
               const isOwnMessage = message.sender_id === currentUserId;
-              const nextMessage = index < reversedMessages.length - 1 ? reversedMessages[index + 1] : null;
+              const prevMessage = index > 0 ? messages[index - 1] : null;
               const showAvatar = !isOwnMessage && isGroupChat && 
-                (!nextMessage || nextMessage.sender_id !== message.sender_id);
+                (!prevMessage || prevMessage.sender_id !== message.sender_id);
               
               const userAvatar = getUserAvatar(message.sender_id);
 
