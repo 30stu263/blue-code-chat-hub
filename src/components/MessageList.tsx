@@ -79,7 +79,7 @@ const MessageList: React.FC<MessageListProps> = ({
         className="flex-1 p-4" 
         ref={scrollAreaRef}
       >
-        <div className="flex flex-col space-y-3" style={{ paddingTop: 'calc(100vh - 400px)', minHeight: '100%' }}>
+        <div className="flex flex-col space-y-3 min-h-full justify-end">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[200px]">
               <div className="text-center text-white/60">
