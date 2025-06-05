@@ -59,16 +59,6 @@ const MessageList: React.FC<MessageListProps> = ({
     fetchUserProfiles();
   }, [isGroupChat, messages]);
 
-  // Auto-scroll to bottom when new messages arrive (like WhatsApp)
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
-      }
-    }
-  }, [messages]);
-
   const getUserDisplayName = (userId: string): string => {
     if (userId === currentUserId) return 'You';
     const profile = userProfiles[userId];
@@ -89,7 +79,7 @@ const MessageList: React.FC<MessageListProps> = ({
         className="flex-1 p-4" 
         ref={scrollAreaRef}
       >
-        <div className="flex flex-col space-y-3">
+        <div className="flex flex-col justify-end min-h-full space-y-3">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[200px]">
               <div className="text-center text-white/60">
