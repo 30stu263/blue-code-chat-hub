@@ -28,8 +28,14 @@ const MessageList: React.FC<MessageListProps> = ({
   groupChat
 }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Fetch user profiles for group chat members
   useEffect(() => {
@@ -152,6 +158,8 @@ const MessageList: React.FC<MessageListProps> = ({
               );
             })
           )}
+          {/* Invisible element to scroll to */}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
     </div>
