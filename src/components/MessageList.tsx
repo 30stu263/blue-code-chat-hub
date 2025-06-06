@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DatabaseMessage } from '../hooks/useMessages';
@@ -127,7 +126,7 @@ const MessageList: React.FC<MessageListProps> = ({
                       )}
                       
                       {!showAvatar && !isOwnMessage && isGroupChat && (
-                        <div className="w-8 h-8" /> // Spacer for alignment
+                        <div className="w-8 h-8" /> 
                       )}
 
                       <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
@@ -156,8 +155,7 @@ const MessageList: React.FC<MessageListProps> = ({
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
             </div>
           )}
           {/* Invisible element to scroll to */}
