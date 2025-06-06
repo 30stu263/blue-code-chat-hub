@@ -202,32 +202,65 @@ export type Database = {
         Row: {
           avatar_emoji: string | null
           avatar_url: string | null
+          can_create_general: boolean | null
           created_at: string | null
           display_name: string | null
           id: string
           status: string | null
+          theme: string | null
           updated_at: string | null
           username: string | null
         }
         Insert: {
           avatar_emoji?: string | null
           avatar_url?: string | null
+          can_create_general?: boolean | null
           created_at?: string | null
           display_name?: string | null
           id: string
           status?: string | null
+          theme?: string | null
           updated_at?: string | null
           username?: string | null
         }
         Update: {
           avatar_emoji?: string | null
           avatar_url?: string | null
+          can_create_general?: boolean | null
           created_at?: string | null
           display_name?: string | null
           id?: string
           status?: string | null
+          theme?: string | null
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      typing_indicators: {
+        Row: {
+          chat_id: string | null
+          group_chat_id: string | null
+          id: string
+          is_typing: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          group_chat_id?: string | null
+          id?: string
+          is_typing?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          group_chat_id?: string | null
+          id?: string
+          is_typing?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

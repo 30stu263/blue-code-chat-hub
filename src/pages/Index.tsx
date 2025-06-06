@@ -8,9 +8,10 @@ import { useContacts } from '../hooks/useContacts';
 import { useMessages } from '../hooks/useMessages';
 import { useGroupChats } from '../hooks/useGroupChats';
 import { useGroupMessages } from '../hooks/useGroupMessages';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, error: authError, signOut } = useAuth();
   const { contacts, addContact } = useContacts();
   const { groupChats, createGroupChat } = useGroupChats();
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -20,10 +21,11 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !user && !authError) {
+      console.log('Redirecting to auth page...');
       navigate('/auth');
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, authError, navigate]);
 
   // Auto-select general chat on first load
   useEffect(() => {
@@ -35,17 +37,50 @@ const Index = () => {
     }
   }, [groupChats, selectedContactId, selectedGroupChatId]);
 
+  // Show loading screen
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-4 text-center">
           <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white text-lg font-medium">Loading your conversations...</div>
+          <div className="text-white text-lg font-medium">Loading BlueTeck...</div>
+          <div className="text-white/60 text-sm">Connecting to your conversations</div>
         </div>
       </div>
     );
   }
 
+  // Show error screen
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4 text-center max-w-md">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+            <span className="text-red-400 text-2xl">⚠️</span>
+          </div>
+          <div className="text-white text-lg font-medium">Connection Error</div>
+          <div className="text-white/60 text-sm">{authError}</div>
+          <div className="flex space-x-3">
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Try Again
+            </Button>
+            <Button 
+              onClick={() => navigate('/auth')} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Go to Login
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to auth if no user
   if (!user) {
     return null;
   }
