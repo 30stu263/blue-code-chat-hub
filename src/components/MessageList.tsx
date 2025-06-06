@@ -76,12 +76,13 @@ const MessageList: React.FC<MessageListProps> = ({
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - 130px)' }}>
       <ScrollArea 
-        className="flex-1 p-4" 
+        className="flex-1" 
         ref={scrollAreaRef}
       >
-        <div className="flex flex-col space-y-3 min-h-full justify-end">
+        <div className="p-4 flex flex-col space-y-3 min-h-full">
+          <div className="flex-1"></div>
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full min-h-[200px]">
+            <div className="flex items-center justify-center min-h-[200px]">
               <div className="text-center text-white/60">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 backdrop-blur-sm border border-white/10">
                   💭
