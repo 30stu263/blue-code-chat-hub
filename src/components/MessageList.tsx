@@ -119,8 +119,11 @@ const MessageList: React.FC<MessageListProps> = ({
                         >
                           <p className="leading-relaxed">{message.content}</p>
                           <div className="text-xs text-white/60 mt-1">
-                            {/* DATE AND TIME */}
-                            {new Date(message.created_at).toLocaleDateString()} {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {/* DATE AND TIME (safe fallback) */}
+                            {message.created_at
+                              ? `${new Date(message.created_at).toLocaleDateString()} ${new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                              : 'Unknown time'
+                            }
                           </div>
                         </div>
                       </div>
