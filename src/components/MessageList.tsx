@@ -30,16 +30,18 @@ const MessageList: React.FC<MessageListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
+  const [profilesLoading, setProfilesLoading] = useState(false);
 
   // Fetch all user profiles for the senders in the messages
   useEffect(() => {
     const fetchUserProfiles = async () => {
       const uniqueSenderIds = [
         ...new Set(messages.map((msg) => msg.sender_id)),
-      ];
+      ].filter(Boolean); // Filter out any falsy values
       if (uniqueSenderIds.length === 0) return;
 
-      // Fetch profiles from supabase
+      setProfilesLoading(true);
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, display_name, avatar_emoji, avatar_url')
@@ -51,7 +53,11 @@ const MessageList: React.FC<MessageListProps> = ({
           profiles[profile.id] = profile;
         });
         setUserProfiles(profiles);
+      } else {
+        // If error, just don't crash UI, leave profiles empty
+        setUserProfiles({});
       }
+      setProfilesLoading(false);
     };
 
     fetchUserProfiles();
@@ -64,14 +70,14 @@ const MessageList: React.FC<MessageListProps> = ({
 
   const getUserDisplayName = (userId: string) => {
     const profile = userProfiles[userId];
-    return profile?.display_name || `User ${userId.slice(0, 8)}`;
+    return profile?.display_name || `User ${userId?.slice?.(0, 8) || 'unknown'}`;
   };
 
   const getUserAvatar = (userId: string) => {
     const profile = userProfiles[userId];
     return {
       emoji: profile?.avatar_emoji || '👤',
-      url: profile?.avatar_url
+      url: profile?.avatar_url || ''
     };
   };
 
@@ -99,7 +105,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 const prevMessage = index > 0 ? messages[index - 1] : null;
                 const showAvatar = !isOwnMessage && isGroupChat && 
                   (!prevMessage || prevMessage.sender_id !== message.sender_id);
-                
+
                 const userAvatar = getUserAvatar(message.sender_id);
 
                 return (
@@ -145,7 +151,6 @@ const MessageList: React.FC<MessageListProps> = ({
                         >
                           <p className="leading-relaxed">{message.content}</p>
                           <div className="text-xs text-white/60 mt-1">
-                            {/* DATE AND TIME (safe fallback) */}
                             {message.created_at
                               ? `${new Date(message.created_at).toLocaleDateString()} ${new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                               : 'Unknown time'
@@ -157,6 +162,10 @@ const MessageList: React.FC<MessageListProps> = ({
                   </div>
                 );
               })}
+              {/* Optional: show loading spinner while fetching profiles */}
+              {profilesLoading && (
+                <div className="text-center text-white/40 text-xs mt-4">Loading user info…</div>
+              )}
             </div>
           )}
           {/* Invisible element to scroll to */}
