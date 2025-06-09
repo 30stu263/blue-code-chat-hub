@@ -30,17 +30,18 @@ const MessageList: React.FC<MessageListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
-  const [profilesLoading, setProfilesLoading] = useState(false);
 
   // Fetch all user profiles for the senders in the messages
   useEffect(() => {
     const fetchUserProfiles = async () => {
       const uniqueSenderIds = [
         ...new Set(messages.map((msg) => msg.sender_id)),
-      ].filter(Boolean); // Filter out any falsy values
-      if (uniqueSenderIds.length === 0) return;
+      ].filter(Boolean);
 
-      setProfilesLoading(true);
+      if (uniqueSenderIds.length === 0) {
+        setUserProfiles({});
+        return;
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -54,10 +55,8 @@ const MessageList: React.FC<MessageListProps> = ({
         });
         setUserProfiles(profiles);
       } else {
-        // If error, just don't crash UI, leave profiles empty
         setUserProfiles({});
       }
-      setProfilesLoading(false);
     };
 
     fetchUserProfiles();
@@ -116,7 +115,6 @@ const MessageList: React.FC<MessageListProps> = ({
                     }`}
                   >
                     <div className={`flex ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-[75%]`}>
-                      {/* Avatar - only show for first message in a sequence in group chats */}
                       {showAvatar && (
                         <Avatar className="w-8 h-8 mb-1">
                           {userAvatar.url ? (
@@ -133,7 +131,6 @@ const MessageList: React.FC<MessageListProps> = ({
                       )}
 
                       <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                        {/* Display name for group chats */}
                         {!isOwnMessage && isGroupChat && showAvatar && (
                           <div className="text-xs text-white/60 mb-1 px-1">
                             {getUserDisplayName(message.sender_id)}
@@ -162,13 +159,8 @@ const MessageList: React.FC<MessageListProps> = ({
                   </div>
                 );
               })}
-              {/* Optional: show loading spinner while fetching profiles */}
-              {profilesLoading && (
-                <div className="text-center text-white/40 text-xs mt-4">Loading user info…</div>
-              )}
             </div>
           )}
-          {/* Invisible element to scroll to */}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
