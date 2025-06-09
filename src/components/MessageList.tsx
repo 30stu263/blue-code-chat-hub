@@ -36,36 +36,7 @@ const MessageList: React.FC<MessageListProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Fetch user profiles for group chat members
-  useEffect(() => {
-    if (!isGroupChat || messages.length === 0) return;
-
-    const fetchUserProfiles = async () => {
-      const uniqueUserIds = [...new Set(messages.map(msg => msg.sender_id))];
-      
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, avatar_emoji, avatar_url')
-        .in('id', uniqueUserIds);
-
-      if (error) {
-        console.error('Error fetching user profiles:', error);
-        return;
-      }
-
-      const profilesMap = profiles?.reduce((acc, profile) => {
-        acc[profile.id] = profile;
-        return acc;
-      }, {} as Record<string, UserProfile>) || {};
-
-      setUserProfiles(profilesMap);
-    };
-
-    fetchUserProfiles();
-  }, [isGroupChat, messages]);
-
-  const getUserDisplayName = (userId: string): string => {
-    if (userId === currentUserId) return 'You';
+  const getUserDisplayName = (userId: string) => {
     const profile = userProfiles[userId];
     return profile?.display_name || `User ${userId.slice(0, 8)}`;
   };
@@ -148,7 +119,10 @@ const MessageList: React.FC<MessageListProps> = ({
                         >
                           <p className="leading-relaxed">{message.content}</p>
                           <div className="text-xs text-white/60 mt-1">
-                            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {message.created_at
+                              ? `${new Date(message.created_at).toLocaleDateString()} ${new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                              : 'Unknown time'
+                            }
                           </div>
                         </div>
                       </div>
