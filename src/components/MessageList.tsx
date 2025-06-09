@@ -31,6 +31,32 @@ const MessageList: React.FC<MessageListProps> = ({
   const isGroupChat = !!groupChat;
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
 
+  // Fetch all user profiles for the senders in the messages
+  useEffect(() => {
+    const fetchUserProfiles = async () => {
+      const uniqueSenderIds = [
+        ...new Set(messages.map((msg) => msg.sender_id)),
+      ];
+      if (uniqueSenderIds.length === 0) return;
+
+      // Fetch profiles from supabase
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_emoji, avatar_url')
+        .in('id', uniqueSenderIds);
+
+      if (!error && Array.isArray(data)) {
+        const profiles: Record<string, UserProfile> = {};
+        data.forEach((profile) => {
+          profiles[profile.id] = profile;
+        });
+        setUserProfiles(profiles);
+      }
+    };
+
+    fetchUserProfiles();
+  }, [messages]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
