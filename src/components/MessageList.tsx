@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MessageListProps {
-  messages: DatabaseMessage[];
+  messages?: DatabaseMessage[]; // Allow undefined, default to []
   currentUserId: string;
   contact?: DatabaseContact;
   groupChat?: DatabaseGroupChat;
@@ -21,7 +21,7 @@ interface UserProfile {
 }
 
 const MessageList: React.FC<MessageListProps> = ({
-  messages,
+  messages = [],
   currentUserId,
   contact,
   groupChat
@@ -30,49 +30,52 @@ const MessageList: React.FC<MessageListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGroupChat = !!groupChat;
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
+  const [profilesLoading, setProfilesLoading] = useState(false);
 
   // Fetch all user profiles for the senders in the messages
   useEffect(() => {
     const fetchUserProfiles = async () => {
       const uniqueSenderIds = [
-        ...new Set(messages.map((msg) => msg.sender_id)),
-      ].filter(Boolean);
-
+        ...new Set(messages.map((msg) => msg.sender_id).filter(Boolean)),
+      ];
       if (uniqueSenderIds.length === 0) {
         setUserProfiles({});
         return;
       }
-
+      setProfilesLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('id, display_name, avatar_emoji, avatar_url')
         .in('id', uniqueSenderIds);
 
-      if (!error && Array.isArray(data)) {
+      if (error) {
+        console.error('Error fetching user profiles:', error);
+        setUserProfiles({});
+      } else if (Array.isArray(data)) {
         const profiles: Record<string, UserProfile> = {};
         data.forEach((profile) => {
           profiles[profile.id] = profile;
         });
         setUserProfiles(profiles);
-      } else {
-        setUserProfiles({});
       }
+      setProfilesLoading(false);
     };
 
     fetchUserProfiles();
   }, [messages]);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const getUserDisplayName = (userId: string) => {
+  const getUserDisplayName = (userId: string | undefined) => {
+    if (!userId) return 'Unknown User';
     const profile = userProfiles[userId];
-    return profile?.display_name || `User ${userId?.slice?.(0, 8) || 'unknown'}`;
+    return profile?.display_name || `User ${userId.slice(0, 8)}`;
   };
 
-  const getUserAvatar = (userId: string) => {
+  const getUserAvatar = (userId: string | undefined) => {
+    if (!userId) return { emoji: '👤', url: '' };
     const profile = userProfiles[userId];
     return {
       emoji: profile?.avatar_emoji || '👤',
@@ -87,7 +90,7 @@ const MessageList: React.FC<MessageListProps> = ({
         ref={scrollAreaRef}
       >
         <div className="p-4 flex flex-col justify-end min-h-full">
-          {messages.length === 0 ? (
+          {(messages.length === 0) ? (
             <div className="flex items-center justify-center min-h-[200px]">
               <div className="text-center text-white/60">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 backdrop-blur-sm border border-white/10">
@@ -100,16 +103,16 @@ const MessageList: React.FC<MessageListProps> = ({
           ) : (
             <div className="flex flex-col space-y-3">
               {messages.map((message, index) => {
+                if (!message) return null; // Safeguard
                 const isOwnMessage = message.sender_id === currentUserId;
                 const prevMessage = index > 0 ? messages[index - 1] : null;
                 const showAvatar = !isOwnMessage && isGroupChat && 
                   (!prevMessage || prevMessage.sender_id !== message.sender_id);
-
                 const userAvatar = getUserAvatar(message.sender_id);
 
                 return (
                   <div
-                    key={message.id}
+                    key={message.id || index}
                     className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${
                       showAvatar ? 'mt-4' : 'mt-1'
                     }`}
@@ -125,18 +128,15 @@ const MessageList: React.FC<MessageListProps> = ({
                           </AvatarFallback>
                         </Avatar>
                       )}
-                      
                       {!showAvatar && !isOwnMessage && isGroupChat && (
                         <div className="w-8 h-8" /> 
                       )}
-
                       <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                         {!isOwnMessage && isGroupChat && showAvatar && (
                           <div className="text-xs text-white/60 mb-1 px-1">
                             {getUserDisplayName(message.sender_id)}
                           </div>
                         )}
-
                         <div
                           className={`
                             rounded-2xl px-4 py-2 break-words whitespace-pre-wrap
@@ -159,6 +159,9 @@ const MessageList: React.FC<MessageListProps> = ({
                   </div>
                 );
               })}
+              {profilesLoading && (
+                <div className="text-center text-white/40 text-xs mt-4">Loading user info…</div>
+              )}
             </div>
           )}
           <div ref={messagesEndRef} />
