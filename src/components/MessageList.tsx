@@ -31,22 +31,67 @@ const MessageList: React.FC<MessageListProps> = ({
   const isGroupChat = !!groupChat;
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
 
+  // Defensive: Ensure messages is always an array
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
+  // Fetch all user profiles for the senders in the messages
+  useEffect(() => {
+    const fetchUserProfiles = async () => {
+      const uniqueSenderIds = [
+        ...new Set(safeMessages.map((msg) => msg?.sender_id).filter(Boolean)),
+      ];
+      if (uniqueSenderIds.length === 0) {
+        setUserProfiles({});
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_emoji, avatar_url')
+        .in('id', uniqueSenderIds);
+
+      if (!error && Array.isArray(data)) {
+        const profiles: Record<string, UserProfile> = {};
+        data.forEach((profile) => {
+          profiles[profile.id] = profile;
+        });
+        setUserProfiles(profiles);
+      } else {
+        setUserProfiles({});
+      }
+    };
+
+    fetchUserProfiles();
+    // Only depend on safeMessages here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeMessages]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [safeMessages]);
 
-  const getUserDisplayName = (userId: string) => {
+  const getUserDisplayName = (userId?: string) => {
+    if (!userId) return 'Unknown User';
     const profile = userProfiles[userId];
     return profile?.display_name || `User ${userId.slice(0, 8)}`;
   };
 
-  const getUserAvatar = (userId: string) => {
+  const getUserAvatar = (userId?: string) => {
+    if (!userId) return { emoji: '👤', url: '' };
     const profile = userProfiles[userId];
     return {
       emoji: profile?.avatar_emoji || '👤',
-      url: profile?.avatar_url
+      url: profile?.avatar_url || ''
     };
+  };
+
+  // Defensive: parse date only if valid
+  const formatDateTime = (created_at?: string) => {
+    if (!created_at) return 'Unknown time';
+    const d = new Date(created_at);
+    if (isNaN(d.getTime())) return 'Unknown time';
+    return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   return (
@@ -56,7 +101,7 @@ const MessageList: React.FC<MessageListProps> = ({
         ref={scrollAreaRef}
       >
         <div className="p-4 flex flex-col justify-end min-h-full">
-          {messages.length === 0 ? (
+          {safeMessages.length === 0 ? (
             <div className="flex items-center justify-center min-h-[200px]">
               <div className="text-center text-white/60">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 backdrop-blur-sm border border-white/10">
@@ -68,17 +113,18 @@ const MessageList: React.FC<MessageListProps> = ({
             </div>
           ) : (
             <div className="flex flex-col space-y-3">
-              {messages.map((message, index) => {
+              {safeMessages.map((message, index) => {
+                if (!message) return null;
                 const isOwnMessage = message.sender_id === currentUserId;
-                const prevMessage = index > 0 ? messages[index - 1] : null;
+                const prevMessage = index > 0 ? safeMessages[index - 1] : null;
                 const showAvatar = !isOwnMessage && isGroupChat && 
                   (!prevMessage || prevMessage.sender_id !== message.sender_id);
-                
+
                 const userAvatar = getUserAvatar(message.sender_id);
 
                 return (
                   <div
-                    key={message.id}
+                    key={message.id || index}
                     className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${
                       showAvatar ? 'mt-4' : 'mt-1'
                     }`}
@@ -119,10 +165,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         >
                           <p className="leading-relaxed">{message.content}</p>
                           <div className="text-xs text-white/60 mt-1">
-                            {message.created_at
-                              ? `${new Date(message.created_at).toLocaleDateString()} ${new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                              : 'Unknown time'
-                            }
+                            {formatDateTime(message.created_at)}
                           </div>
                         </div>
                       </div>
